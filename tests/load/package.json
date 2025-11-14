@@ -1,0 +1,21 @@
+{
+  "name": "@permamind/load-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Load testing suite for Permamind Registry Process",
+  "scripts": {
+    "load-test": "ts-node registry-load-test.ts",
+    "load-test:verbose": "VERBOSE=true ts-node registry-load-test.ts",
+    "load-test:heavy": "CONCURRENT=200 ITERATIONS=20 ts-node registry-load-test.ts",
+    "load-test:quick": "CONCURRENT=10 ITERATIONS=3 ts-node registry-load-test.ts"
+  },
+  "dependencies": {
+    "@permaweb/aoconnect": "^0.0.53",
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
