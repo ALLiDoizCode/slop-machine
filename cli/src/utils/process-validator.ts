@@ -8,11 +8,10 @@ import path from 'path';
 import chalk from 'chalk';
 import { z } from 'zod';
 import {
-  ProcessMetadataSchema,
   validateProcessMetadata,
   safeValidateProcessMetadata,
   formatValidationError,
-  type ProcessMetadata
+  type ProcessMetadata,
 } from '../schemas/process-schema';
 
 /**
@@ -30,8 +29,8 @@ export async function loadAndValidateProcessMetadata(processDir: string): Promis
   } catch (error) {
     throw new Error(
       `process.json not found in ${processDir}\n` +
-      `  Expected: ${metadataPath}\n` +
-      `  Create one with: permamind init`
+        `  Expected: ${metadataPath}\n` +
+        `  Create one with: permamind init`
     );
   }
 
@@ -43,9 +42,7 @@ export async function loadAndValidateProcessMetadata(processDir: string): Promis
   } catch (error) {
     if (error instanceof SyntaxError) {
       throw new Error(
-        `process.json contains invalid JSON:\n` +
-        `  ${error.message}\n` +
-        `  File: ${metadataPath}`
+        `process.json contains invalid JSON:\n` + `  ${error.message}\n` + `  File: ${metadataPath}`
       );
     }
     throw error;
@@ -58,8 +55,8 @@ export async function loadAndValidateProcessMetadata(processDir: string): Promis
     const formattedError = formatValidationError(result.error);
     throw new Error(
       `${formattedError}\n\n` +
-      `  File: ${metadataPath}\n` +
-      `  Fix the errors above and try again.`
+        `  File: ${metadataPath}\n` +
+        `  Fix the errors above and try again.`
     );
   }
 
@@ -88,8 +85,8 @@ export async function validateProcessLuaFile(processDir: string): Promise<string
     } catch {
       throw new Error(
         `process.lua not found in ${processDir}\n` +
-        `  Expected: ${luaPath} OR ${fallbackPath}\n` +
-        `  Create one with: permamind init`
+          `  Expected: ${luaPath} OR ${fallbackPath}\n` +
+          `  Create one with: permamind init`
       );
     }
   }
@@ -101,7 +98,7 @@ export async function validateProcessLuaFile(processDir: string): Promise<string
   if (!content.includes('require') || !content.includes('permamind')) {
     console.warn(
       chalk.yellow('\n⚠️  Warning: process.lua does not appear to import Permamind SDK\n') +
-      chalk.gray('  Expected: local permamind = require("permamind")\n')
+        chalk.gray('  Expected: local permamind = require("permamind")\n')
     );
   }
 
@@ -109,7 +106,7 @@ export async function validateProcessLuaFile(processDir: string): Promise<string
   if (!content.includes('Handlers.add')) {
     console.warn(
       chalk.yellow('\n⚠️  Warning: process.lua does not appear to register any handlers\n') +
-      chalk.gray('  Expected: Handlers.add(...)\n')
+        chalk.gray('  Expected: Handlers.add(...)\n')
     );
   }
 
@@ -153,7 +150,7 @@ export function createExampleMetadata(
     version: '1.0.0',
     description: options.description || `Payment-gated ${name} service`,
     pricing: {
-      DefaultAction: options.defaultPrice || 1000000
+      DefaultAction: options.defaultPrice || 1000000,
     },
     skills: [],
     capabilities: options.capabilities || [],
@@ -196,7 +193,7 @@ export async function updateProcessMetadata(
   const updated = {
     ...existing,
     ...updates,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   };
 
   // Validate merged result

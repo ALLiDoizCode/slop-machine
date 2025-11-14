@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Setup Node.js 18+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      # Setup Lua 5.3
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: '5.3'
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Install aolite globally for testing
+      - name: Install aolite
+        run: npm install -g aolite
+
+      # Run ESLint on CLI workspace
+      - name: Lint TypeScript code
+        run: npm run lint --workspace=cli
+
+      # Run Prettier format check on CLI workspace
+      - name: Check code formatting
+        run: npm run format:check --workspace=cli
+
+      # Run aolite tests (will pass if no tests exist yet)
+      - name: Run aolite tests
+        run: |
+          if [ -n "$(find tests -name '*.test.lua' 2>/dev/null)" ]; then
+            aolite test tests/**/*.test.lua
+          else
+            echo "No aolite tests found yet. Skipping test execution."
+            echo "Tests will be added in Story 1.3+"
+          fi
+        continue-on-error: false
