@@ -1,0 +1,107 @@
+// Nillion Micropayment Protocol - WebSocket Stream Messages
+// Version: 1.0.0
+// Protocol Buffers v3
+//
+// This is the root message type for all WebSocket communication.
+// All messages are wrapped in StreamMessage and sent as binary frames.
+
+syntax = "proto3";
+
+package nillion.payment.v1;
+
+import "common.proto";
+import "auth.proto";
+import "channel.proto";
+import "payment.proto";
+import "settlement.proto";
+import "swap.proto";
+
+// ============================================================================
+// ROOT MESSAGE (WebSocket Frame Wrapper)
+// ============================================================================
+
+message StreamMessage {
+  // Message ID for request/response correlation
+  string message_id = 1;
+
+  // Message payload (oneof = exactly one of these)
+  oneof payload {
+    // Authentication (auth.proto)
+    AuthChallenge auth_challenge = 10;
+    AuthResponse auth_response = 11;
+    AuthSuccess auth_success = 12;
+    AuthFailure auth_failure = 13;
+    Heartbeat heartbeat = 14;
+    HeartbeatAck heartbeat_ack = 15;
+
+    // Channel Management (channel.proto)
+    CreateChannelRequest create_channel_request = 20;
+    CreateChannelResponse create_channel_response = 21;
+    GetChannelRequest get_channel_request = 22;
+    GetChannelResponse get_channel_response = 23;
+    ListChannelsRequest list_channels_request = 24;
+    ListChannelsResponse list_channels_response = 25;
+    CloseChannelRequest close_channel_request = 26;
+    CloseChannelResponse close_channel_response = 27;
+    ChannelUpdate channel_update = 28;
+    VoucherPoolStatus voucher_pool_status = 29;
+    RegenerateVoucherPoolRequest regenerate_pool_request = 30;
+    RegenerateVoucherPoolResponse regenerate_pool_response = 31;
+
+    // Payments (payment.proto)
+    SendPaymentRequest send_payment_request = 40;
+    SendPaymentResponse send_payment_response = 41;
+    GetPaymentRequest get_payment_request = 42;
+    GetPaymentResponse get_payment_response = 43;
+    ListPaymentsRequest list_payments_request = 44;
+    ListPaymentsResponse list_payments_response = 45;
+    PaymentReceived payment_received = 46;
+    PaymentFailed payment_failed = 47;
+    BatchPaymentRequest batch_payment_request = 48;
+    BatchPaymentResponse batch_payment_response = 49;
+
+    // Settlements (settlement.proto)
+    InitiateSettlementRequest initiate_settlement_request = 60;
+    InitiateSettlementResponse initiate_settlement_response = 61;
+    GetSettlementRequest get_settlement_request = 62;
+    GetSettlementResponse get_settlement_response = 63;
+    ListSettlementsRequest list_settlements_request = 64;
+    ListSettlementsResponse list_settlements_response = 65;
+    SettlementConfirmed settlement_confirmed = 66;
+    SettlementFailed settlement_failed = 67;
+    SettlementThresholdWarning settlement_threshold_warning = 68;
+
+    // Cross-Chain Swaps (swap.proto)
+    InitiateSwapRequest initiate_swap_request = 80;
+    SwapQuote swap_quote = 81;
+    ExecuteSwapRequest execute_swap_request = 82;
+    ExecuteSwapResponse execute_swap_response = 83;
+    GetSwapRequest get_swap_request = 84;
+    GetSwapResponse get_swap_response = 85;
+    SwapStatusUpdate swap_status_update = 86;
+    SwapCompleted swap_completed = 87;
+    SwapFailed swap_failed = 88;
+
+    // Error (common.proto)
+    Error error = 99;
+  }
+
+  // Metadata
+  Metadata metadata = 2;
+}
+
+// ============================================================================
+// FRAMING INFO
+// ============================================================================
+
+// Binary framing format:
+//
+// [4 bytes: message length (big-endian uint32)]
+// [N bytes: serialized StreamMessage]
+//
+// Example:
+//   0x00 0x00 0x00 0x42  (66 bytes follow)
+//   <66 bytes of protobuf binary data>
+//
+// Server and client must implement length-prefixed framing to correctly
+// parse message boundaries in the WebSocket stream.

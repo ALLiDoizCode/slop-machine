@@ -1,0 +1,168 @@
+// Nillion Micropayment Protocol - Common Types
+// Version: 1.0.0
+// Protocol Buffers v3
+
+syntax = "proto3";
+
+package nillion.payment.v1;
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum ChainType {
+  CHAIN_TYPE_UNSPECIFIED = 0;
+  ETHEREUM_OPTIMISM = 1;
+  BITCOIN_LIGHTNING = 2;
+  SOLANA = 3;
+}
+
+enum ChannelStatus {
+  CHANNEL_STATUS_UNSPECIFIED = 0;
+  OPENING = 1;  // Transaction submitted, awaiting confirmation
+  OPEN = 2;     // Active, can process payments
+  CLOSING = 3;  // Closure initiated, awaiting finalization
+  CLOSED = 4;   // Finalized on-chain
+  DISPUTED = 5; // Fraud proof challenge period
+}
+
+enum VoucherStatus {
+  VOUCHER_STATUS_UNSPECIFIED = 0;
+  UNUSED = 1;     // Available in pool
+  CONSUMED = 2;   // Used for a payment
+  EXPIRED = 3;    // TTL exceeded
+}
+
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PENDING = 1;
+  COMPLETED = 2;
+  FAILED = 3;
+}
+
+enum SettlementType {
+  SETTLEMENT_TYPE_UNSPECIFIED = 0;
+  MONETARY_THRESHOLD = 1;  // $100/$1000 threshold hit
+  MANUAL = 2;              // User-initiated
+  CHANNEL_CLOSURE = 3;     // Channel closing
+}
+
+enum SettlementStatus {
+  SETTLEMENT_STATUS_UNSPECIFIED = 0;
+  SETTLEMENT_PENDING = 1;
+  CONFIRMED = 2;
+  SETTLEMENT_FAILED = 3;
+}
+
+enum SwapStatus {
+  SWAP_STATUS_UNSPECIFIED = 0;
+  INITIATED = 1;       // Swap created
+  SOURCE_LOCKED = 2;   // Source chain funds locked
+  DEST_LOCKED = 3;     // Destination chain funds locked
+  SWAP_COMPLETED = 4;  // Secret revealed, both chains settled
+  REFUNDED = 5;        // Timeout, funds returned
+  SWAP_FAILED = 6;     // Error during process
+}
+
+// ============================================================================
+// ERROR TYPES
+// ============================================================================
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+
+  // Authentication errors (1xx)
+  AUTH_FAILED = 100;
+  AUTH_EXPIRED = 101;
+  AUTH_INVALID_SIGNATURE = 102;
+
+  // Channel errors (2xx)
+  CHANNEL_NOT_FOUND = 200;
+  CHANNEL_ALREADY_EXISTS = 201;
+  CHANNEL_NOT_OPEN = 202;
+  CHANNEL_INSUFFICIENT_BALANCE = 203;
+
+  // Voucher errors (3xx)
+  VOUCHER_NOT_FOUND = 300;
+  VOUCHER_EXPIRED = 301;
+  VOUCHER_ALREADY_CONSUMED = 302;
+  VOUCHER_INVALID_SIGNATURE = 303;
+  VOUCHER_AMOUNT_EXCEEDED = 304;
+
+  // Payment errors (4xx)
+  PAYMENT_INVALID_AMOUNT = 400;
+  PAYMENT_NONCE_MISMATCH = 401;
+  PAYMENT_VERIFICATION_FAILED = 402;
+
+  // Nillion errors (5xx)
+  NILLION_UNAVAILABLE = 500;
+  NILLION_MPC_SIGNING_FAILED = 501;
+  NILLION_STORAGE_FAILED = 502;
+
+  // Blockchain errors (6xx)
+  BLOCKCHAIN_RPC_ERROR = 600;
+  BLOCKCHAIN_TX_FAILED = 601;
+  BLOCKCHAIN_INSUFFICIENT_GAS = 602;
+
+  // System errors (9xx)
+  INTERNAL_ERROR = 900;
+  RATE_LIMIT_EXCEEDED = 901;
+  INVALID_REQUEST = 902;
+}
+
+// ============================================================================
+// COMMON MESSAGES
+// ============================================================================
+
+message Error {
+  ErrorCode code = 1;
+  string message = 2;
+  map<string, string> details = 3;
+  int64 timestamp = 4; // Unix timestamp milliseconds
+  string request_id = 5; // For debugging/support
+}
+
+message User {
+  string user_id = 1; // UUID
+  string ethereum_address = 2; // 0x-prefixed hex
+  string bitcoin_address = 3; // Optional
+  string solana_address = 4; // Optional
+  string nillion_user_id = 5; // Optional
+}
+
+message VoucherPool {
+  string pool_id = 1; // UUID
+  string channel_id = 2; // UUID
+  int32 pool_nonce = 3;
+  int32 total_vouchers = 4; // Always 100
+  int32 unused_vouchers = 5;
+  string nillion_storage_id = 6;
+  int64 last_backup_at = 7; // Unix timestamp milliseconds
+  int64 created_at = 8;
+}
+
+message Voucher {
+  string voucher_id = 1; // Format: nillion_<uuid>
+  string channel_id = 2; // UUID
+  int32 nonce = 3; // 0-99 within pool
+  string amount_limit = 4; // bigint as string
+  int64 expires_at = 5; // Unix timestamp milliseconds
+  bytes mpc_signature = 6; // Binary Nillion MPC signature
+  VoucherStatus status = 7;
+}
+
+message Balance {
+  string amount = 1; // bigint as string (wei/satoshi/lamport)
+  string formatted = 2; // Human-readable (e.g., "1.5 ETH")
+  ChainType chain = 3;
+}
+
+// ============================================================================
+// METADATA
+// ============================================================================
+
+message Metadata {
+  string version = 1; // Protocol version (e.g., "1.0.0")
+  int64 timestamp = 2; // Message creation time
+  string client_version = 3; // SDK version (e.g., "client-sdk@1.2.3")
+}

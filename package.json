@@ -1,0 +1,48 @@
+{
+  "name": "nillion-micropayment-protocol",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nillion-powered web-native micropayment protocol with multi-chain support",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/nillion-micropayment-protocol.git"
+  },
+  "license": "MIT",
+  "author": "Your Organization",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint -- --fix",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "proto:generate": "turbo run proto:generate",
+    "migrate": "pnpm --filter=server run migrate",
+    "migrate:rollback": "pnpm --filter=server run migrate:rollback",
+    "migrate:create": "pnpm --filter=server run migrate:create",
+    "benchmark": "pnpm --filter=server run benchmark",
+    "setup": "./scripts/dev-setup.sh",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:clean": "docker-compose down -v"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "turbo": "^1.12.4",
+    "@turbo/gen": "^1.12.4"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.3"
+}

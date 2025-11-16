@@ -1,0 +1,287 @@
+name: Epic Test Matrix (Multi-Chain)
+
+# Run comprehensive tests across all 3 blockchain integrations in parallel
+# This workflow is designed to test Epic 1 (Ethereum), Epic 2 (Bitcoin), Epic 3 (Solana)
+
+on:
+  push:
+    branches: [epic-*]
+  pull_request:
+    branches: [epic-*]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  # Matrix: Test all 3 chains in parallel
+  chain-integration-tests:
+    name: Test ${{ matrix.chain }} Integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        chain: [ethereum, bitcoin, solana]
+        include:
+          # Ethereum Optimism (Epic 1)
+          - chain: ethereum
+            test_filter: 'ethereum'
+            env_vars: |
+              ENABLE_ETHEREUM=true
+              ENABLE_BITCOIN=false
+              ENABLE_SOLANA=false
+              INFURA_PROJECT_ID=${{ secrets.INFURA_PROJECT_ID }}
+              ALCHEMY_API_KEY=${{ secrets.ALCHEMY_API_KEY }}
+
+          # Bitcoin Lightning (Epic 2)
+          - chain: bitcoin
+            test_filter: 'bitcoin'
+            env_vars: |
+              ENABLE_ETHEREUM=false
+              ENABLE_BITCOIN=true
+              ENABLE_SOLANA=false
+              BITCOIN_RPC_URL=https://blockstream.info/testnet/api
+
+          # Solana (Epic 3)
+          - chain: solana
+            test_filter: 'solana'
+            env_vars: |
+              ENABLE_ETHEREUM=false
+              ENABLE_BITCOIN=false
+              ENABLE_SOLANA=true
+              SOLANA_RPC_URL=https://api.devnet.solana.com
+
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nillion_pay_test_${{ matrix.chain }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ${{ matrix.chain }} tests
+        run: pnpm run test -- --filter=${{ matrix.test_filter }}
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nillion_pay_test_${{ matrix.chain }}
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+          JWT_SECRET: test-secret-key-minimum-32-characters-long
+          USE_MOCK_NILLION: true
+          ${{ matrix.env_vars }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.chain }}
+          path: |
+            coverage/
+            test-results/
+
+  # Cross-chain integration tests (Epic 4)
+  cross-chain-tests:
+    name: Cross-Chain Integration Tests
+    runs-on: ubuntu-latest
+    needs: chain-integration-tests
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nillion_pay_test_crosschain
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run cross-chain tests
+        run: pnpm run test -- --filter=cross-chain
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nillion_pay_test_crosschain
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+          JWT_SECRET: test-secret-key-minimum-32-characters-long
+          USE_MOCK_NILLION: true
+          ENABLE_ETHEREUM: true
+          ENABLE_BITCOIN: true
+          ENABLE_SOLANA: true
+          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+          BITCOIN_RPC_URL: https://blockstream.info/testnet/api
+          SOLANA_RPC_URL: https://api.devnet.solana.com
+
+  # Performance benchmarking (Story 1.13, 2.5, 3.6, 4.8)
+  performance-benchmark:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    needs: chain-integration-tests
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nillion_pay_benchmark
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run performance benchmarks
+        run: pnpm run benchmark
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nillion_pay_benchmark
+          REDIS_URL: redis://localhost:6379
+          USE_MOCK_NILLION: true
+
+      - name: Validate performance targets
+        run: |
+          # Parse benchmark results and validate against targets
+          # Target: <100ms p95 latency, 1000+ pkt/sec throughput
+          node scripts/validate-benchmarks.js
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark-results/
+
+  # Test matrix summary
+  test-summary:
+    name: Test Matrix Summary
+    runs-on: ubuntu-latest
+    needs: [chain-integration-tests, cross-chain-tests, performance-benchmark]
+    if: always()
+
+    steps:
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+
+      - name: Generate test summary
+        run: |
+          echo "# Test Matrix Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Chain Integration Tests" >> $GITHUB_STEP_SUMMARY
+          echo "- Ethereum: ${{ needs.chain-integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Bitcoin: ${{ needs.chain-integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Solana: ${{ needs.chain-integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Cross-Chain Tests" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: ${{ needs.cross-chain-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Performance Benchmarks" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: ${{ needs.performance-benchmark.result }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check if all tests passed
+        run: |
+          if [ "${{ needs.chain-integration-tests.result }}" != "success" ] || \
+             [ "${{ needs.cross-chain-tests.result }}" != "success" ] || \
+             [ "${{ needs.performance-benchmark.result }}" != "success" ]; then
+            echo "❌ One or more test suites failed"
+            exit 1
+          fi
+          echo "✅ All test suites passed!"

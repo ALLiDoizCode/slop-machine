@@ -1,0 +1,127 @@
+// Nillion Micropayment Protocol - Payment Messages
+// Version: 1.0.0
+// Protocol Buffers v3
+
+syntax = "proto3";
+
+package nillion.payment.v1;
+
+import "common.proto";
+
+// ============================================================================
+// PAYMENT FLOW
+// ============================================================================
+
+// Client → Server: Send micropayment
+message SendPaymentRequest {
+  string channel_id = 1; // UUID
+  string amount = 2; // bigint as string (must be > 0)
+  string voucher_id = 3; // Pre-selected voucher from local pool
+  string description = 4; // Optional payment description/memo
+  map<string, string> metadata = 5; // Optional application-specific data
+}
+
+// Server → Client: Payment result
+message SendPaymentResponse {
+  string payment_id = 1; // UUID
+  PaymentStatus status = 2;
+  int32 latency_ms = 3; // End-to-end processing time
+  int32 new_nonce = 4; // Updated channel nonce
+  string local_balance = 5; // bigint as string (updated balance)
+  string remote_balance = 6; // bigint as string (updated balance)
+  int64 timestamp = 7; // Unix timestamp milliseconds
+}
+
+// ============================================================================
+// PAYMENT QUERIES
+// ============================================================================
+
+// Client → Server: Get payment details
+message GetPaymentRequest {
+  string payment_id = 1; // UUID
+}
+
+// Server → Client: Payment details
+message GetPaymentResponse {
+  Payment payment = 1;
+  Voucher voucher = 2; // Voucher used for this payment
+}
+
+message Payment {
+  string id = 1; // UUID
+  string channel_id = 2;
+  string voucher_id = 3;
+  string sender_address = 4;
+  string receiver_address = 5;
+  string amount = 6; // bigint as string
+  int32 nonce = 7; // Channel nonce after payment
+  PaymentStatus status = 8;
+  int32 latency_ms = 9;
+  int64 created_at = 10;
+  int64 completed_at = 11; // 0 if not completed
+  string error_message = 12; // If status = FAILED
+}
+
+// Client → Server: List payments for channel
+message ListPaymentsRequest {
+  string channel_id = 1;
+  int64 start_time = 2; // Unix timestamp milliseconds (optional filter)
+  int64 end_time = 3; // Unix timestamp milliseconds (optional filter)
+  int32 page = 4;
+  int32 limit = 5; // Max 100
+}
+
+// Server → Client: Payment list
+message ListPaymentsResponse {
+  repeated Payment payments = 1;
+  Pagination pagination = 2;
+  PaymentSummary summary = 3;
+}
+
+message PaymentSummary {
+  int32 total_count = 1;
+  string total_volume = 2; // bigint as string
+  int32 avg_latency_ms = 3;
+  double success_rate = 4; // Percentage (0-100)
+}
+
+// ============================================================================
+// PAYMENT EVENTS (Server-Initiated)
+// ============================================================================
+
+// Server → Client: Payment received notification
+message PaymentReceived {
+  string payment_id = 1;
+  string channel_id = 2;
+  string sender_address = 3;
+  string amount = 4; // bigint as string
+  string new_balance = 5; // bigint as string (updated remote_balance)
+  int64 timestamp = 6;
+}
+
+// Server → Client: Payment failed notification
+message PaymentFailed {
+  string payment_id = 1;
+  string channel_id = 2;
+  ErrorCode error_code = 3;
+  string error_message = 4;
+  int64 timestamp = 5;
+}
+
+// ============================================================================
+// BATCH PAYMENTS (Future Enhancement)
+// ============================================================================
+
+// Client → Server: Send multiple payments in batch
+message BatchPaymentRequest {
+  repeated SendPaymentRequest payments = 1; // Max 10 per batch
+  string channel_id = 2; // All payments must be on same channel
+}
+
+// Server → Client: Batch results
+message BatchPaymentResponse {
+  repeated SendPaymentResponse results = 1;
+  int32 successful_count = 2;
+  int32 failed_count = 3;
+  int32 total_latency_ms = 4;
+}

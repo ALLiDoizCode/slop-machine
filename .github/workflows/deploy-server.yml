@@ -1,0 +1,98 @@
+name: Deploy Server (Railway)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/server/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'Dockerfile'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --service backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Wait for deployment
+        run: sleep 30
+
+      - name: Health check
+        run: |
+          MAX_RETRIES=10
+          RETRY_COUNT=0
+          HEALTH_URL="${{ secrets.RAILWAY_BACKEND_URL }}/health"
+
+          until [ $RETRY_COUNT -ge $MAX_RETRIES ]
+          do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" $HEALTH_URL)
+            if [ $HTTP_CODE -eq 200 ]; then
+              echo "✅ Health check passed!"
+              exit 0
+            fi
+            echo "Health check failed with code $HTTP_CODE, retrying in 5 seconds..."
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            sleep 5
+          done
+
+          echo "❌ Health check failed after $MAX_RETRIES attempts"
+          exit 1
+
+  smoke-tests:
+    name: Smoke Tests
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Test API endpoints
+        run: |
+          # Test health endpoint
+          curl -f ${{ secrets.RAILWAY_BACKEND_URL }}/health
+
+          # Test channels endpoint (should require auth)
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.RAILWAY_BACKEND_URL }}/v1/channels)
+          if [ $HTTP_CODE -eq 401 ]; then
+            echo "✅ Auth protection working correctly"
+          else
+            echo "❌ Expected 401, got $HTTP_CODE"
+            exit 1
+          fi
+
+  notify-success:
+    name: Notify Deployment Success
+    needs: [deploy, smoke-tests]
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: Send success notification
+        run: |
+          echo "✅ Server successfully deployed to Railway!"
+          echo "URL: ${{ secrets.RAILWAY_BACKEND_URL }}"
+
+  notify-failure:
+    name: Notify Deployment Failure
+    needs: [deploy, smoke-tests]
+    runs-on: ubuntu-latest
+    if: failure()
+
+    steps:
+      - name: Send failure notification
+        run: |
+          echo "❌ Server deployment or smoke tests failed!"
+          echo "Check the logs for details"
