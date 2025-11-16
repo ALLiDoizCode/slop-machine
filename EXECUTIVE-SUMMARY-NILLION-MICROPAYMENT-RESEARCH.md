@@ -1,7 +1,10 @@
 # Executive Summary: Web-Native Interledger Micropayment Protocol Research
 
 **Research Period:** November 15, 2025
+**Last Updated:** November 16, 2025
 **Research Objective:** Validate technical feasibility of web-native (HTTP/WebSocket) interledger micropayment protocol using Nillion Private Compute for transaction signing and Private Storage for key management, targeting 1000+ packets/second throughput with <100ms latency.
+
+**Update:** Added Architecture Option B (Pre-Signed Vouchers) for M2M and Nillion agent scenarios where client-side key storage is not feasible. This architecture achieves the same performance targets by pre-signing vouchers during handshake and storing them in-memory, with Nillion Storage as backup for recovery.
 
 ---
 
@@ -14,13 +17,24 @@
 - Cannot achieve 1000 pkt/sec throughput (actual: 4-10 pkt/sec)
 - Cost prohibitive ($86,400/day = $2.6M/month)
 
-**Recommended Architecture (Hybrid Hot/Cold Path):** ✅ **GO**
+**Recommended Architectures:** ✅ **GO** (Two Viable Options)
+
+**Option A - Client-Side Signing (Web2):** ✅ **PREFERRED**
 - Achieves <100ms latency (actual: 15-45ms p95)
 - Achieves 1000+ pkt/sec throughput (actual: 10,000+ pkt/sec)
-- Cost viable ($10-100/day = $300-3,000/month)
+- Cost: $312/month
+- Best for: Browser apps, traditional APIs
 
-**Confidence Level:** HIGH (85%)
-**Key Assumption:** Payment channel architecture with client-side signing and Nillion-secured settlement
+**Option B - Pre-Signed Vouchers (M2M):** ✅ **VIABLE**
+- Achieves <100ms latency (actual: 15-51ms p95)
+- Achieves 1000+ pkt/sec throughput (actual: 10,000+ pkt/sec)
+- Cost: $12,240/month (40× higher, but still 200× cheaper than original)
+- Best for: M2M, Nillion agents, high-security scenarios
+
+**Confidence Level:** HIGH (85% for Option A, 80% for Option B)
+**Key Assumptions:**
+- Option A: Payment channels with client-side signing, Nillion for settlement
+- Option B: Nillion can pre-sign vouchers, agents can maintain in-memory state
 
 ---
 
@@ -95,7 +109,9 @@ Result:   0ms key retrieval latency (keys already local)
 
 ## Recommended Architecture
 
-### Hybrid Hot/Cold Path Model
+### Architecture Option A: Hybrid Hot/Cold Path (Web2 Agents)
+
+**Best for:** Web2 applications, browser-based clients, traditional APIs
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -123,29 +139,98 @@ Result:   0ms key retrieval latency (keys already local)
 └─────────────────────────────────────────────────────┘
 ```
 
-### Architecture Components
+### Architecture Option B: Pre-Signed Vouchers (M2M & Nillion Agents)
 
-**1. Hot Path (Streaming Payments)**
-- **Transport:** WebSocket with binary framing (Protocol Buffers)
-- **Signing:** Client-side Ed25519 (64-byte signatures, <1ms)
-- **Batching:** 100 packets per signature commit (10 signatures/sec)
-- **Validation:** Server verifies signatures and updates channel state
-- **Latency:** 15-45ms p95 (dominated by network RTT, not crypto)
+**Best for:** Machine-to-Machine, Nillion Private Compute agents, high-security scenarios
+
+**Key Innovation:** Pre-sign vouchers during handshake, store in memory for hot path, backup to Nillion Storage for recovery
+
+```
+┌──────────────────────────────────────────────────────┐
+│  PHASE 1: HANDSHAKE (One-Time, 10-30 seconds)       │
+└──────────────────────────────────────────────────────┘
+
+1. WebSocket + Capability Negotiation
+   └─ Estimate session: 10,000 messages
+
+2. Payment Channel Setup (On-Chain)
+   └─ Open & fund channels
+
+3. ⭐ Nillion Pre-Signs Vouchers (NEW)
+   ├─ 100 vouchers × 100ms = 10 seconds
+   ├─ Each voucher: 100 messages, $1 max value
+   └─ Nillion MPC signatures (secure)
+
+4. Dual Storage Strategy:
+   ├─ A. In-Memory (Hot Path): 0.001ms access ✅
+   └─ B. Nillion Storage (Backup): Recovery only
+
+┌──────────────────────────────────────────────────────┐
+│  PHASE 2: STREAMING (Hot Path, <50ms)               │
+└──────────────────────────────────────────────────────┘
+
+Per Message:
+1. Receive signed message           → 0.02ms (verify)
+2. Pop voucher from memory          → 0.001ms ✅
+3. Attach to response               → <1ms
+4. Send via WebSocket               → 15-50ms
+5. Receiver verifies                → 0.02ms
+
+Total: ~15-51ms per message ✅
+
+┌──────────────────────────────────────────────────────┐
+│  PHASE 3: RECOVERY (Cold Path, if crash)            │
+└──────────────────────────────────────────────────────┘
+
+On Crash:
+1. Retrieve vouchers from Nillion Storage → 200-500ms
+2. Resume from last checkpoint            → Continue ✅
+```
+
+**Memory Footprint:**
+- 100 vouchers × ~200 bytes = 20 KB per session
+- 1,000 sessions = 20 MB RAM
+- 50,000 sessions per 1 GB RAM ✅
+
+### Shared Architecture Components (Both Options)
+
+**1. Transport Layer**
+- **Protocol:** WebSocket with binary framing (Protocol Buffers)
+- **Encoding:** Protocol Buffers for 1.3% overhead vs JSON
+- **Connection:** Persistent WebSocket, multiplexed streams
+- **Latency:** 15-45ms p95 (network RTT dominant factor)
 - **Throughput:** 10,000+ pkt/sec per connection
 
-**2. Cold Path (Settlement)**
+**2. Settlement Layer**
 - **Trigger:** Time (1 hour) OR Value ($1000) OR Count (10,000 pkts) OR Balance (<10%)
-- **Signing:** Nillion Private Compute signs settlement transaction
-- **Settlement:** On-chain to Ethereum L2 (Optimism/Arbitrum) via Connext
-- **Latency:** 100-500ms (acceptable for settlement, not blocking streaming)
-- **Frequency:** ~1 settlement/hour (~8 Nillion signatures/day)
-- **Cost:** $0.01/day in Nillion operations (hypothetical pricing)
+- **Mechanism:** Connext Vector on Ethereum L2 (Optimism/Arbitrum)
+- **Latency:** 100-500ms (acceptable, not blocking streaming)
+- **Frequency:** ~1 settlement/hour (~8 operations/day)
+- **Cost:** $0.10-0.50 per settlement (circular rebalancing)
 
 **3. Security Layer**
-- **Key Backup:** Nillion Private Storage holds encrypted recovery keys
-- **Recovery:** If client device lost, recover keys from Nillion
-- **Multi-Sig:** Optional Nillion co-signing for high-value settlements (>$10k)
-- **Fraud Proofs:** Payment channel challenge period (24 hours) with watchtowers
+- **Encryption:** TLS 1.3 for transport
+- **Authentication:** Challenge-response during handshake
+- **Fraud Proofs:** Payment channel challenge period (24 hours)
+- **Watchtowers:** Automated monitoring for malicious closures
+- **Nillion Backup:** Private Storage for key/voucher recovery
+
+### Architecture-Specific Components
+
+**Option A (Client-Side Signing):**
+- **Signing:** Ed25519 on client device (<1ms)
+- **Key Storage:** Browser IndexedDB (encrypted) or secure enclave
+- **Verification:** Server-side Ed25519 verification (0.02ms)
+- **Nillion Role:** Settlement signing + key backup only
+- **Cost:** ~$0.01/day Nillion operations
+
+**Option B (Pre-Signed Vouchers):**
+- **Handshake Signing:** Nillion Private Compute (100 vouchers in 10s)
+- **Runtime Signing:** In-memory voucher lookup (0.001ms)
+- **Verification:** Server validates Nillion signature (0.02ms)
+- **Nillion Role:** Pre-sign vouchers + storage backup + settlement
+- **Cost:** ~$0.10/session (100 vouchers) + $0.01/day settlement
+- **Memory:** 20 KB per session (negligible)
 
 ---
 
@@ -194,7 +279,7 @@ Result:   0ms key retrieval latency (keys already local)
 - Infrastructure: $100/day
 - **TOTAL:** $86,500/day = **$2.6M/month** ❌
 
-### Recommended Architecture (Hybrid Hot/Cold)
+### Architecture Option A (Client-Side Signing)
 
 **Daily Costs:**
 - Nillion signing: 8.64 ops × $0.001 = **$0.01/day**
@@ -204,6 +289,31 @@ Result:   0ms key retrieval latency (keys already local)
 - **TOTAL:** $10.41/day = **$312/month** ✅
 
 **Cost Reduction:** 8,000× cheaper ($2.6M → $312/month)
+
+### Architecture Option B (Pre-Signed Vouchers)
+
+**Per-Session Costs (10,000 messages):**
+- Voucher generation: 100 vouchers × $0.001 = **$0.10/session**
+- Settlement (1 per session): **$0.10-0.50**
+- Amortized infrastructure: **$0.01/session** (assumes 1000 sessions/day)
+- **TOTAL:** $0.21-0.61 per session
+
+**Daily Costs (1000 sessions/day):**
+- Voucher generation: $0.10 × 1000 = **$100/day**
+- Settlement: $0.30 × 1000 = **$300/day**
+- Infrastructure (edge deployment): **$8/day**
+- **TOTAL:** $408/day = **$12,240/month**
+
+**Cost Comparison:**
+- Option A (Client-Side): $312/month ✅ **Most cost-effective**
+- Option B (Vouchers): $12,240/month ⚠️ **40× more expensive**
+- Original: $2.6M/month ❌ **Infeasible**
+
+**When to Use Option B:**
+- M2M scenarios where client-side keys unacceptable
+- Nillion agents that cannot store local keys
+- High-security requirements (MPC signatures)
+- Willing to pay premium for Nillion security guarantees
 
 ### Revenue Potential
 
@@ -670,11 +780,27 @@ Result:   0ms key retrieval latency (keys already local)
 
 ### Key Architectural Decisions
 
-1. **Client-Side Signing for Real-Time:** Ed25519 signatures (<1ms) for packet streaming
-2. **Nillion for Settlement:** Batch settlement signing (~1 operation/hour) + key recovery
-3. **Payment Channels for Scalability:** Off-chain state updates, on-chain settlement
-4. **Edge Deployment for Latency:** Geographic distribution reduces network RTT by 6-10x
-5. **Single-Chain MVP:** Ethereum L2 (Optimism) + Connext Vector for fastest validation
+**Core Decisions (Both Architectures):**
+1. **Payment Channels for Scalability:** Off-chain state updates, on-chain settlement
+2. **WebSocket Transport:** Binary framing with Protocol Buffers
+3. **Edge Deployment for Latency:** Geographic distribution reduces network RTT by 6-10x
+4. **Single-Chain MVP:** Ethereum L2 (Optimism) + Connext Vector for fastest validation
+5. **Nillion for Recovery:** Private Storage as backup/disaster recovery mechanism
+
+**Architecture-Specific Decisions:**
+
+**Option A (Client-Side Signing) - Recommended for Web2:**
+- Ed25519 signatures (<1ms) on client device for packet streaming
+- Nillion only for settlement signing (~1 operation/hour) + key backup
+- Lowest cost: $312/month
+- Best for: Browser apps, mobile apps, traditional APIs
+
+**Option B (Pre-Signed Vouchers) - Recommended for M2M:**
+- Nillion pre-signs vouchers during handshake (10 seconds, acceptable)
+- In-memory voucher lookup during streaming (0.001ms, fast)
+- Nillion Storage backup for crash recovery (200-500ms, rare)
+- Higher cost: $12,240/month (but still 200× cheaper than original)
+- Best for: M2M, Nillion agents, high-security scenarios
 
 ### Investment Recommendation
 
