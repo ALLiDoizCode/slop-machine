@@ -1,6 +1,6 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": 1763077100617,
+  "generatedAt": 1763243224327,
   "skills": [
     {
       "name": "ao",
@@ -45,6 +45,15 @@
       "arweaveTxId": "_1sZhnPB8tQYidV9mLjHwgExroZcxJ1p_BGgYoCqfdc",
       "installedAt": 1763077100617,
       "installedPath": "/Users/jonathangreen/Documents/slop-machine/.claude/skills/aoconnect",
+      "dependencies": [],
+      "isDirectDependency": true
+    },
+    {
+      "name": "skill-creator",
+      "version": "1.0.0",
+      "arweaveTxId": "BTlFUSm32km6D2ODuh2I-Rd2Syomz4UuJBHLFFhWF08",
+      "installedAt": 1763243224326,
+      "installedPath": "/Users/jonathangreen/Documents/slop-machine/.claude/skills/skill-creator",
       "dependencies": [],
       "isDirectDependency": true
     }
