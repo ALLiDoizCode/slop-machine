@@ -79,3 +79,5 @@ appendonly.aof
 
 # Benchmark results
 benchmark-results/
+.nillion-mock-storage/
+.nillion-mock-storage-test/
