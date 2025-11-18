@@ -1,168 +1,46 @@
 # Product Requirements Document: BIMP Protocol Implementation
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Status:** Draft
-**Date:** November 17, 2025
+**Date:** November 18, 2025
 **Product Owner:** Sarah (BMad PO Agent)
 **Technical Lead:** Jonathan Green
+**Prepared By:** John (PM Agent)
 
 ---
 
-## Executive Summary
+## Goals and Background Context
 
-This PRD defines the requirements for implementing the **BIMP (Bidirectional Interledger Micropayment Protocol)** - a lightweight protocol for streaming micropayments over HTTP/WebSocket connections designed for machine-to-machine (M2M) communication.
+### Goals
 
-The implementation will deliver:
-1. Reference implementation (Node.js server + client)
-2. Smart contract deployment to testnets (Base, Optimism)
-3. Multi-language SDKs (TypeScript, Python, Go, Rust)
-4. RFC specification for standardization (IETF/W3C submission)
-5. Demo applications showcasing real-world use cases
+The BIMP Protocol Implementation aims to deliver the following outcomes:
 
-**Market Opportunity:** The M2M payment space is underserved with existing solutions either too complex (ILP/STREAM), ledger-specific (Lightning/Raiden), or not designed for M2M use cases. BIMP fills this gap with 90% less complexity while maintaining production-grade capabilities.
+- **Protocol Standardization**: Establish BIMP as a recognized standard for M2M micropayments through formal RFC submission to IETF or W3C
+- **Developer Adoption**: Enable developers to integrate BIMP into their applications within 30 minutes using comprehensive SDKs and documentation
+- **Production Readiness**: Deliver production-quality reference implementation with full test coverage, security audits, and performance benchmarks
+- **Ecosystem Growth**: Demonstrate BIMP viability through working demo applications across IoT, AI agents, and API monetization use cases
+- **Multi-Chain Support**: Support multiple blockchain ecosystems (Ethereum L2s, Lightning Network) through pluggable settlement adapters
 
----
+### Background Context
 
-## Table of Contents
+The machine-to-machine (M2M) payment space is currently underserved. Existing solutions are either too complex (ILP/STREAM), ledger-specific (Lightning/Raiden), or not designed for M2M use cases. BIMP (Bidirectional Interledger Micropayment Protocol) fills this gap by providing 90% less complexity while maintaining production-grade capabilities.
 
-1. [Goals & Objectives](#1-goals--objectives)
-2. [User Personas](#2-user-personas)
-3. [Requirements](#3-requirements)
-4. [Implementation Phases](#4-implementation-phases)
-5. [Technical Specifications](#5-technical-specifications)
-6. [Success Metrics](#6-success-metrics)
-7. [Timeline & Milestones](#7-timeline--milestones)
-8. [Dependencies & Risks](#8-dependencies--risks)
-9. [Open Questions](#9-open-questions)
+BIMP is a lightweight protocol for streaming micropayments over HTTP/WebSocket connections designed specifically for machine-to-machine communication. The protocol enables autonomous AI agents, IoT devices, and API services to exchange value programmatically without human intervention, using cryptographic signatures and payment channels to minimize on-chain transaction costs.
+
+### Change Log
+
+| Date | Version | Description | Author |
+|------|---------|-------------|--------|
+| 2025-11-17 | 1.0.0 | Initial PRD creation | Sarah (BMad PO Agent) |
+| 2025-11-18 | 1.1.0 | Restructured to BMAD template standard, added epic details, technical assumptions, and workflow sections | John (PM Agent) |
 
 ---
 
-## 1. Goals & Objectives
+## Requirements
 
-### 1.1 Primary Goals
+### Functional Requirements
 
-**G1: Protocol Standardization**
-Establish BIMP as a recognized standard for M2M micropayments through formal RFC submission to IETF or W3C.
-
-**G2: Developer Adoption**
-Enable developers to integrate BIMP into their applications within 30 minutes using comprehensive SDKs and documentation.
-
-**G3: Production Readiness**
-Deliver production-quality reference implementation with full test coverage, security audits, and performance benchmarks.
-
-**G4: Ecosystem Growth**
-Demonstrate BIMP viability through working demo applications across IoT, AI agents, and API monetization use cases.
-
-**G5: Multi-Chain Support**
-Support multiple blockchain ecosystems (Ethereum L2s, Lightning Network) through pluggable settlement adapters.
-
-### 1.2 Success Criteria
-
-- ✅ RFC draft submitted to IETF/W3C with community feedback addressed
-- ✅ Reference implementation deployed to npm with >90% test coverage
-- ✅ Smart contracts deployed and verified on Base and Optimism testnets
-- ✅ 4 production-ready SDKs published (TypeScript, Python, Go, Rust)
-- ✅ 3 working demo applications demonstrating different use cases
-- ✅ Performance: <100ms latency for payment verification, >1000 msg/sec throughput
-- ✅ Security: Zero critical vulnerabilities in smart contracts (audited)
-
-### 1.3 Non-Goals (Out of Scope)
-
-❌ Multi-hop routing (direct peer-to-peer only for v1.0)
-❌ Mobile SDKs (iOS/Android) - future versions
-❌ GUI wallet applications - focus on programmatic access
-❌ Mainnet deployment - testnet only until security audits complete
-❌ Cross-chain atomic swaps - future enhancement
-
----
-
-## 2. User Personas
-
-### Persona 1: Backend Developer (Primary)
-
-**Name:** Alex the API Developer
-**Role:** Senior Backend Engineer
-**Goals:**
-- Add micropayment monetization to existing REST API
-- Minimal integration effort (<1 day)
-- Support multiple payment methods without vendor lock-in
-
-**Pain Points:**
-- Existing payment solutions require complex account management
-- High transaction fees make micropayments uneconomical
-- Vendor-specific APIs create lock-in
-
-**How BIMP Helps:**
-- x402 handshake integrates with existing HTTP 402 pattern
-- Payment channel abstraction works with any blockchain
-- Simple SDK reduces integration to hours, not weeks
-
-### Persona 2: IoT Developer (Secondary)
-
-**Name:** Maya the IoT Engineer
-**Role:** Embedded Systems Developer
-**Goals:**
-- Enable IoT devices to sell sensor data
-- Low power consumption for battery-powered devices
-- Reliable payments despite intermittent connectivity
-
-**Pain Points:**
-- Traditional payment APIs too heavyweight for embedded devices
-- Need offline-capable payment mechanisms
-- Can't afford per-transaction blockchain fees
-
-**How BIMP Helps:**
-- Lightweight protocol suitable for resource-constrained devices
-- Payment channels enable offline operation with periodic settlement
-- Batched settlements reduce blockchain costs by 99%
-
-### Persona 3: AI Agent Developer (Tertiary)
-
-**Name:** Raj the AI Researcher
-**Role:** ML Engineer / AI Agent Developer
-**Goals:**
-- Build autonomous AI agents that can pay for services
-- Enable agent-to-agent marketplaces
-- Bidirectional payments (agents buy and sell)
-
-**Pain Points:**
-- Existing payment systems require human authorization
-- Need programmatic, autonomous payment capabilities
-- Bidirectional flows not well-supported
-
-**How BIMP Helps:**
-- Fully programmatic (no UI required)
-- Native bidirectional payment support
-- Signed state commitments enable trustless agent interactions
-
-### Persona 4: Protocol Researcher (Tertiary)
-
-**Name:** Dr. Chen the Standards Expert
-**Role:** Protocol Architect
-**Goals:**
-- Evaluate BIMP for production deployment
-- Understand security properties and trade-offs
-- Contribute to protocol standardization
-
-**Pain Points:**
-- Need comprehensive specification documentation
-- Require formal security analysis
-- Want to participate in standards process
-
-**How BIMP Helps:**
-- Complete RFC-quality specification
-- Formal threat model and security analysis
-- Open standardization process through IETF/W3C
-
----
-
-## 3. Requirements
-
-### 3.1 Functional Requirements
-
-#### FR1: Protocol Implementation
-
-**FR1.1: HTTP 402 Handshake**
+#### FR1: HTTP 402 Handshake
 The system SHALL implement x402-based channel establishment using HTTP 402 status codes.
 
 **Acceptance Criteria:**
@@ -171,7 +49,7 @@ The system SHALL implement x402-based channel establishment using HTTP 402 statu
 - Server creates payment channel on-chain after payment verification
 - Channel credentials returned to client (channelId, streamEndpoint, token)
 
-**FR1.2: WebSocket Streaming**
+#### FR2: WebSocket Streaming
 The system SHALL support bidirectional payment streaming over WebSocket connections.
 
 **Acceptance Criteria:**
@@ -181,7 +59,7 @@ The system SHALL support bidirectional payment streaming over WebSocket connecti
 - DATA packets support application payloads without payments
 - CONTROL packets manage connection lifecycle
 
-**FR1.3: Payment Channel Management**
+#### FR3: Payment Channel Management
 The system SHALL support multiple payment channel backends through adapter interface.
 
 **Acceptance Criteria:**
@@ -190,7 +68,7 @@ The system SHALL support multiple payment channel backends through adapter inter
 - Monotonic state numbers prevent replay attacks
 - Bidirectional channels support simultaneous two-way payments
 
-**FR1.4: State Signature Verification**
+#### FR4: State Signature Verification
 The system SHALL verify cryptographic signatures on all payment packets.
 
 **Acceptance Criteria:**
@@ -199,9 +77,7 @@ The system SHALL verify cryptographic signatures on all payment packets.
 - State number monotonicity enforced
 - Signature recovery identifies payer address
 
-#### FR2: Smart Contract Suite
-
-**FR2.1: Channel Factory Contract**
+#### FR5: Channel Factory Smart Contract
 The system SHALL provide smart contract for creating payment channels.
 
 **Acceptance Criteria:**
@@ -211,7 +87,7 @@ The system SHALL provide smart contract for creating payment channels.
 - `closeChannel()` function refunds remaining balances after expiry
 - Events emitted for all state changes
 
-**FR2.2: Security Properties**
+#### FR6: Smart Contract Security
 Smart contracts SHALL enforce security guarantees.
 
 **Acceptance Criteria:**
@@ -221,9 +97,7 @@ Smart contracts SHALL enforce security guarantees.
 - Reentrancy protection on all payable functions
 - Gas optimization for cost-effective settlement
 
-#### FR3: SDK Requirements
-
-**FR3.1: TypeScript SDK**
+#### FR7: TypeScript SDK
 Provide npm package with full TypeScript support.
 
 **Acceptance Criteria:**
@@ -234,7 +108,7 @@ Provide npm package with full TypeScript support.
 - Promise-based async API
 - 100% JSDoc coverage
 
-**FR3.2: Python SDK**
+#### FR8: Python SDK
 Provide PyPI package with full Python support.
 
 **Acceptance Criteria:**
@@ -244,7 +118,7 @@ Provide PyPI package with full Python support.
 - Settlement adapters for all backends
 - Sphinx documentation
 
-**FR3.3: Go SDK**
+#### FR9: Go SDK
 Provide Go module with idiomatic Go API.
 
 **Acceptance Criteria:**
@@ -254,7 +128,7 @@ Provide Go module with idiomatic Go API.
 - Go module with semantic versioning
 - GoDoc documentation
 
-**FR3.4: Rust SDK**
+#### FR10: Rust SDK
 Provide Cargo package with safe Rust API.
 
 **Acceptance Criteria:**
@@ -264,9 +138,7 @@ Provide Cargo package with safe Rust API.
 - No unsafe code in public API
 - Rustdoc documentation
 
-#### FR4: RFC Specification
-
-**FR4.1: IETF/W3C Submission**
+#### FR11: RFC Specification
 Produce RFC-quality specification for standards track.
 
 **Acceptance Criteria:**
@@ -277,9 +149,7 @@ Produce RFC-quality specification for standards track.
 - Interoperability requirements
 - Reference implementation citations
 
-#### FR5: Demo Applications
-
-**FR5.1: IoT Sensor Data Marketplace**
+#### FR12: IoT Demo Application
 Demonstrate BIMP for IoT use case.
 
 **Acceptance Criteria:**
@@ -289,7 +159,7 @@ Demonstrate BIMP for IoT use case.
 - Runs continuously for 24 hours without errors
 - README with setup instructions
 
-**FR5.2: AI Agent Service Trading**
+#### FR13: AI Agent Demo Application
 Demonstrate bidirectional payments between agents.
 
 **Acceptance Criteria:**
@@ -299,7 +169,7 @@ Demonstrate bidirectional payments between agents.
 - Demonstrates autonomous operation
 - README with architecture explanation
 
-**FR5.3: API Monetization**
+#### FR14: API Monetization Demo
 Demonstrate BIMP for API access control.
 
 **Acceptance Criteria:**
@@ -309,622 +179,1138 @@ Demonstrate BIMP for API access control.
 - Swagger/OpenAPI documentation
 - Postman collection included
 
-### 3.2 Non-Functional Requirements
+### Non-Functional Requirements
 
-#### NFR1: Performance
+#### NFR1: Signature Verification Latency
+Signature verification SHALL complete in <50ms at 95th percentile.
 
-**NFR1.1: Latency**
-- Signature verification: <50ms (p95)
-- WebSocket message round-trip: <100ms (p95)
-- Channel creation (on-chain): <15 seconds (Base L2)
+#### NFR2: WebSocket Message Latency
+WebSocket message round-trip SHALL complete in <100ms at 95th percentile.
 
-**NFR1.2: Throughput**
-- Single connection: >1000 messages/second
-- Single server: >10,000 concurrent connections
-- Payment verification: >5000 signatures/second
+#### NFR3: Channel Creation Time
+On-chain channel creation SHALL complete in <15 seconds on Base L2.
 
-**NFR1.3: Resource Usage**
-- Memory per connection: <1MB
-- CPU per connection: <5%
-- Bandwidth overhead: <10% of application data
+#### NFR4: Message Throughput
+Single connection SHALL support >1000 messages/second.
 
-#### NFR2: Security
+#### NFR5: Concurrent Connections
+Single server SHALL support >10,000 concurrent connections.
 
-**NFR2.1: Smart Contract Security**
-- Zero critical vulnerabilities (audited)
-- Reentrancy protection verified
-- Gas limit checks on all loops
-- Access control enforced
+#### NFR6: Payment Verification Throughput
+System SHALL verify >5000 signatures/second.
 
-**NFR2.2: Protocol Security**
-- TLS 1.3+ required for all connections
-- Signature verification on all payments
-- Rate limiting prevents DoS
-- Replay attack protection via nonces
+#### NFR7: Memory Efficiency
+Memory per connection SHALL be <1MB.
 
-#### NFR3: Reliability
+#### NFR8: CPU Efficiency
+CPU per connection SHALL be <5%.
 
-**NFR3.1: Availability**
-- Reference implementation: 99.9% uptime
-- Graceful degradation under load
-- Automatic reconnection with exponential backoff
-- Circuit breaker for unhealthy backends
+#### NFR9: Bandwidth Overhead
+Bandwidth overhead SHALL be <10% of application data.
 
-**NFR3.2: Data Integrity**
-- Message delivery guarantees documented
-- Idempotent operations where possible
-- Audit logs for all state changes
-- Transaction atomicity for settlements
+#### NFR10: Smart Contract Security
+Zero critical vulnerabilities in smart contracts (audited).
 
-#### NFR4: Usability
+#### NFR11: Reentrancy Protection
+Reentrancy protection verified on all payable functions.
 
-**NFR4.1: Developer Experience**
-- "Hello World" example in <30 lines of code
-- Integration time: <4 hours for basic use case
-- Error messages include resolution steps
-- Debug logging at multiple levels
+#### NFR12: Gas Limit Safety
+Gas limit checks on all contract loops.
 
-**NFR4.2: Documentation**
-- Getting Started guide (<10 minutes)
-- API reference (100% coverage)
-- Architecture deep-dive
-- Security best practices
-- Troubleshooting guide
+#### NFR13: Access Control
+Access control enforced on privileged contract functions.
 
-#### NFR5: Maintainability
+#### NFR14: Transport Security
+TLS 1.3+ required for all connections.
 
-**NFR5.1: Code Quality**
-- Test coverage: >90% for all SDKs
-- Linting: Zero warnings
-- Static analysis: Zero high/critical issues
-- Dependency updates: Monthly cadence
+#### NFR15: Signature Verification
+Signature verification on all payments.
 
-**NFR5.2: Monitoring**
-- Prometheus metrics for all operations
-- Structured logging (JSON)
-- OpenTelemetry tracing support
-- Health check endpoints
+#### NFR16: DoS Protection
+Rate limiting prevents DoS attacks.
 
----
+#### NFR17: Replay Protection
+Replay attack protection via nonces.
 
-## 4. Implementation Phases
+#### NFR18: Availability
+Reference implementation: 99.9% uptime.
 
-### Phase 1: Core Protocol & Reference Implementation (Weeks 1-4)
+#### NFR19: Graceful Degradation
+Graceful degradation under load.
 
-**Deliverables:**
-- Node.js reference implementation (client + server)
-- Payment channel smart contracts
-- x402 handshake integration
-- WebSocket streaming implementation
-- Unit tests (>90% coverage)
-- Integration tests
+#### NFR20: Automatic Reconnection
+Automatic reconnection with exponential backoff.
 
-**Dependencies:**
-- ethers.js for blockchain interaction
-- ws library for WebSocket
-- x402 SDK for handshake
+#### NFR21: Circuit Breaker
+Circuit breaker for unhealthy backends.
 
-**Exit Criteria:**
-- All unit tests passing
-- Integration tests demonstrate complete flow
-- Performance benchmarks meet targets
-- Security scan shows zero critical issues
+#### NFR22: Message Delivery Guarantees
+Message delivery guarantees documented.
 
-### Phase 2: Smart Contract Deployment (Weeks 2-3)
+#### NFR23: Idempotent Operations
+Idempotent operations where possible.
 
-**Deliverables:**
-- Smart contracts deployed to Base testnet
-- Smart contracts deployed to Optimism testnet
-- Contract verification on block explorers
-- Deployment scripts and documentation
-- Gas cost analysis
+#### NFR24: Audit Logging
+Audit logs for all state changes.
 
-**Dependencies:**
-- Phase 1 smart contracts
-- Testnet ETH for gas
-- Hardhat deployment scripts
+#### NFR25: Transaction Atomicity
+Transaction atomicity for settlements.
 
-**Exit Criteria:**
-- Contracts verified on Basescan/Optimistic Etherscan
-- Deployment documentation complete
-- Gas costs within acceptable range (<$0.01 per operation)
+#### NFR26: Developer Experience - Hello World
+"Hello World" example in <30 lines of code.
 
-### Phase 3: SDK Development (Weeks 4-8)
+#### NFR27: Developer Experience - Integration Time
+Integration time: <4 hours for basic use case.
 
-**Deliverables:**
-- TypeScript SDK (npm package)
-- Python SDK (PyPI package)
-- Go SDK (Go module)
-- Rust SDK (Cargo package)
-- SDK documentation and examples
-- Language-specific integration tests
+#### NFR28: Developer Experience - Error Messages
+Error messages include resolution steps.
 
-**Dependencies:**
-- Phase 1 reference implementation
-- Phase 2 deployed contracts
+#### NFR29: Developer Experience - Debug Logging
+Debug logging at multiple levels.
 
-**Exit Criteria:**
-- All SDKs published to package registries
-- Documentation includes "Hello World" for each language
-- Integration tests pass for each SDK
-- API consistency across languages verified
+#### NFR30: Documentation - Getting Started
+Getting Started guide (<10 minutes).
 
-### Phase 4: RFC Specification (Weeks 6-10)
+#### NFR31: Documentation - API Reference
+API reference (100% coverage).
 
-**Deliverables:**
-- RFC draft in IETF format
-- Packet format specification (ABNF)
-- Security considerations section
-- IANA considerations section
-- Interoperability test suite
+#### NFR32: Documentation - Architecture
+Architecture deep-dive documentation.
 
-**Dependencies:**
-- Phase 1 reference implementation
-- Community feedback on protocol design
+#### NFR33: Documentation - Security
+Security best practices documentation.
 
-**Exit Criteria:**
-- RFC submitted to IETF or W3C working group
-- At least 2 independent implementations
-- Interoperability tests pass between implementations
+#### NFR34: Documentation - Troubleshooting
+Troubleshooting guide.
 
-### Phase 5: Demo Applications (Weeks 8-12)
+#### NFR35: Test Coverage
+Test coverage: >90% for all SDKs.
 
-**Deliverables:**
-- IoT sensor data marketplace demo
-- AI agent service trading demo
-- API monetization demo
-- Demo documentation and tutorials
-- Video walkthroughs
+#### NFR36: Linting
+Linting: Zero warnings.
 
-**Dependencies:**
-- Phase 3 SDKs
-- Phase 2 deployed contracts
+#### NFR37: Static Analysis
+Static analysis: Zero high/critical issues.
 
-**Exit Criteria:**
-- All demos run successfully on testnet
-- Documentation enables replication
-- Demos presented at conference/meetup
+#### NFR38: Dependency Updates
+Dependency updates: Monthly cadence.
+
+#### NFR39: Prometheus Metrics
+Prometheus metrics for all operations.
+
+#### NFR40: Structured Logging
+Structured logging (JSON).
+
+#### NFR41: OpenTelemetry Tracing
+OpenTelemetry tracing support.
+
+#### NFR42: Health Check Endpoints
+Health check endpoints available.
 
 ---
 
-## 5. Technical Specifications
+## User Interface Design Goals
 
-### 5.1 Technology Stack
+**Status:** N/A - Backend-Focused Project
 
-**Backend (Node.js Reference Implementation):**
-- Runtime: Node.js 20 LTS
-- Language: TypeScript 5.3
-- Web Framework: Express.js 4.18
-- WebSocket: ws 8.14
-- Blockchain: ethers.js 6.9
-- Testing: Vitest
-- Linting: ESLint + Prettier
+This project is **backend-focused** with no significant user interface requirements. The deliverables are:
+- Reference implementation (Node.js peer for consumers and providers)
+- Smart contract deployment to Ethereum L2 testnets
+- Multi-language SDKs (TypeScript, Python, Go, Rust)
+- Demo applications (programmatic, not UI-based)
 
-**Smart Contracts:**
-- Language: Solidity 0.8.24
-- Framework: Hardhat
-- Testing: Hardhat + Chai
-- Gas Reporter: hardhat-gas-reporter
-- Verification: @nomiclabs/hardhat-etherscan
-
-**SDKs:**
-- TypeScript: TypeScript 5.3, esbuild for bundling
-- Python: Python 3.11+, Poetry for dependency management
-- Go: Go 1.21+, Go modules
-- Rust: Rust 1.75+, Cargo
-
-**Infrastructure:**
-- Networks: Base Sepolia testnet, Optimism Sepolia testnet
-- RPC: Alchemy or Infura
-- Deployment: Docker containers
-- CI/CD: GitHub Actions
-
-### 5.2 Architecture Patterns
-
-**Client-Server Pattern:**
-- HTTP 402 for handshake (stateless)
-- WebSocket for streaming (stateful)
-- Event-driven packet handling
-
-**Adapter Pattern:**
-- Pluggable settlement backends
-- Common interface: `IBIMPSettlementAdapter`
-- Implementations: x402, Lightning, StateChannel
-
-**State Machine:**
-- Connection states: INIT → CONNECTING → CONNECTED → STREAMING → SETTLING → CLOSED
-- Transition validation ensures protocol correctness
-
-**Security Patterns:**
-- Defense in depth (transport + signature + on-chain)
-- Fail-secure defaults
-- Rate limiting at multiple layers
-
-### 5.3 API Design
-
-**Reference Implementation:**
-
-```typescript
-// Server API
-const server = new BIMPServer({
-  port: 8080,
-  x402: {
-    facilitatorUrl: 'https://facilitator.x402.org',
-    network: 'base-sepolia',
-    asset: '0x...'
-  },
-  channel: {
-    factoryAddress: '0x...',
-    wallet: ethers.Wallet
-  },
-  streaming: {
-    settlementThreshold: '10000'
-  }
-})
-
-await server.start()
-
-// Client API
-const client = new BIMPClient({
-  wallet: ethers.Wallet,
-  x402Config: { ... }
-})
-
-const session = await client.connect('https://server.com/api/resource')
-
-await session.sendPayment(100, { request: 'data' })
-const response = await session.waitForResponse()
-
-await session.close()
-```
-
-### 5.4 Data Models
-
-**Channel Model:**
-```typescript
-interface Channel {
-  id: string
-  client: string
-  server: string
-  capacity: bigint
-  clientBalance: bigint
-  serverBalance: bigint
-  lastStateNumber: number
-  expiresAt: Date
-  isOpen: boolean
-  isBidirectional: boolean
-}
-```
-
-**Payment State:**
-```typescript
-interface PaymentState {
-  channelId: string
-  stateNumber: number
-  totalClaimable: bigint
-  signature: string
-  timestamp: Date
-}
-```
-
-**Session:**
-```typescript
-interface BIMPSession {
-  sessionId: string
-  channelId: string
-  state: ConnectionState
-  latestClientState: PaymentState | null
-  latestServerState: PaymentState | null
-  limits: {
-    sendMax: bigint
-    receiveMax: bigint
-  }
-}
-```
+Future dashboard/monitoring UIs for channel management or protocol analytics would require a separate Frontend Architecture Document and UI/UX specification.
 
 ---
 
-## 6. Success Metrics
+## Technical Assumptions
 
-### 6.1 Leading Indicators (During Development)
+### Repository Structure: Monorepo
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Test Coverage | >90% | Code coverage reports |
-| Build Success Rate | >95% | CI/CD pipeline |
-| Code Review Turnaround | <24 hours | GitHub metrics |
-| Documentation Completeness | 100% API coverage | Doc generator |
-| Security Scan Results | Zero critical | Automated scans |
+**Decision:** Turborepo-based monorepo
 
-### 6.2 Lagging Indicators (Post-Launch)
+**Rationale:**
+- Best for monorepos with TypeScript-heavy workloads
+- Built-in caching and task orchestration
+- Supports multiple package managers (npm, pnpm)
+- Excellent CI/CD integration
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| SDK Downloads | 1000+ in first month | npm/PyPI/crates.io stats |
-| GitHub Stars | 100+ | GitHub metrics |
-| Demo App Usage | 50+ test transactions | On-chain analytics |
-| RFC Community Feedback | 10+ substantive comments | IETF/W3C forums |
-| Integration Time | <4 hours average | Developer surveys |
-
-### 6.3 Performance Benchmarks
-
-| Operation | Target | Actual | Status |
-|-----------|--------|--------|--------|
-| Signature Verification | <50ms (p95) | TBD | Pending |
-| WebSocket Round-Trip | <100ms (p95) | TBD | Pending |
-| Throughput (msg/sec) | >1000 | TBD | Pending |
-| Channel Creation | <15s (Base) | TBD | Pending |
-| Memory per Connection | <1MB | TBD | Pending |
-
-### 6.4 Quality Metrics
-
-| Category | Metric | Target |
-|----------|--------|--------|
-| Reliability | Uptime | >99.9% |
-| Reliability | Error Rate | <0.1% |
-| Security | Critical Vulns | 0 |
-| Security | Audit Score | >90 |
-| Usability | Time to Hello World | <30 min |
-| Usability | Documentation Score | >4.5/5 |
-
----
-
-## 7. Timeline & Milestones
-
-### 7.1 High-Level Timeline (12 weeks)
-
+**Structure:**
 ```
-Week 1-4:  Phase 1 - Core Protocol
-Week 2-3:  Phase 2 - Smart Contracts
-Week 4-8:  Phase 3 - SDK Development
-Week 6-10: Phase 4 - RFC Specification
-Week 8-12: Phase 5 - Demo Applications
-Week 12:   Final Testing & Documentation
+packages/
+  protocol/         # Core BIMP protocol implementation
+  contracts/        # Solidity smart contracts
+  sdk-ts/          # TypeScript SDK
+  sdk-py/          # Python SDK (separate build)
+  sdk-go/          # Go SDK (separate build)
+  sdk-rust/        # Rust SDK (separate build)
+  demo-iot/        # IoT demo application
+  demo-ai-agent/   # AI agent demo application
+  demo-api/        # API monetization demo
+  shared/          # Shared utilities and types
 ```
 
-### 7.2 Detailed Milestones
+### Service Architecture
 
-**Milestone 1: Protocol Foundation (Week 4)**
-- ✅ Reference implementation complete
-- ✅ Smart contracts deployed to testnet
-- ✅ Integration tests passing
-- ✅ Performance benchmarks baseline
-- **Review Gate:** Code review + security scan
+**Decision:** Reference implementation as Node.js peer (client + server)
 
-**Milestone 2: SDK Alpha Release (Week 6)**
-- ✅ TypeScript SDK published
-- ✅ Python SDK published
-- ✅ Documentation sites live
-- ✅ Example apps functional
-- **Review Gate:** Developer preview feedback
+**Rationale:**
+- BIMP is a protocol, not a centralized service
+- Each implementation acts as both client and server
+- Smart contracts are separate Hardhat projects
+- SDKs are language-specific packages with no shared backend
+- No centralized backend service required
 
-**Milestone 3: Multi-Language Support (Week 8)**
-- ✅ Go SDK published
-- ✅ Rust SDK published
-- ✅ API consistency verified
-- ✅ Integration tests complete
-- **Review Gate:** Cross-platform testing
+**Components:**
+- **BIMPServer**: HTTP/WebSocket server accepting payment streams
+- **BIMPClient**: HTTP/WebSocket client initiating payment streams
+- **Settlement Adapters**: Pluggable backends (x402, state channels, Lightning)
+- **Smart Contracts**: On-chain payment channel factory and settlement logic
 
-**Milestone 4: Standards Submission (Week 10)**
-- ✅ RFC draft submitted
-- ✅ Interoperability tests defined
-- ✅ Security analysis complete
-- ✅ Community feedback process started
-- **Review Gate:** Standards committee review
+### Testing Requirements
 
-**Milestone 5: Production Ready (Week 12)**
-- ✅ All demos functional
-- ✅ Documentation complete
-- ✅ Video tutorials published
-- ✅ Performance targets met
-- ✅ Security audit passed
-- **Review Gate:** Production readiness checklist
+**Decision:** Full testing pyramid with >90% coverage
 
-### 7.3 Dependencies & Critical Path
+**Rationale:**
+- Protocol implementations require extensive testing
+- Multiple attack vectors require security testing
+- SDK interoperability requires integration testing
+- Demo applications serve as E2E validation
 
-**Critical Path:**
-```
-Week 1-4: Reference Implementation (CRITICAL)
-  ↓
-Week 2-3: Smart Contracts (CRITICAL)
-  ↓
-Week 4-6: TypeScript SDK (CRITICAL)
-  ↓
-Week 8-12: Demo Applications (CRITICAL)
-```
+**Testing Layers:**
+1. **Unit Tests**: >90% coverage (Vitest for TS, pytest for Python, etc.)
+2. **Integration Tests**: Full flow tests (handshake → stream → settle)
+3. **Contract Tests**: Hardhat + Chai with gas reporting
+4. **Interoperability Tests**: Cross-SDK compatibility validation
+5. **Security Tests**: Fuzzing, signature verification, replay attack prevention
+6. **E2E Tests**: Demo applications as validation
+7. **Performance Tests**: Benchmarking throughput, latency, resource usage
 
-**Parallel Tracks:**
-- Go/Rust SDK development (Weeks 6-8) - parallel to Python SDK
-- RFC writing (Weeks 6-10) - parallel to SDK development
-- Documentation (ongoing) - parallel to all development
+### Additional Technical Assumptions and Requests
+
+- **Cryptography**: EIP-712 for typed data signing (Ethereum standard)
+- **Networking**: WebSocket (ws library) for streaming, HTTP/1.1 for handshake
+- **Blockchain Library**: ethers.js 6.x for blockchain interaction (pin to avoid v7 breaking changes)
+- **Testnet Deployment**: Base Sepolia + Optimism Sepolia for smart contracts
+- **Containerization**: Docker for containerized demos
+- **CI/CD**: GitHub Actions for automated testing and deployment
+- **RPC Providers**: Alchemy or Infura with fallback for reliability
+- **Security**: TLS 1.3+ required for all production connections
+- **Monitoring**: Prometheus metrics, structured JSON logging, OpenTelemetry tracing
+- **Documentation**: RFC-style specification, API docs, architecture docs, security best practices
 
 ---
 
-## 8. Dependencies & Risks
+## Epic List
 
-### 8.1 External Dependencies
+The following epics represent the complete MVP delivery. Each epic is designed to deliver a significant, end-to-end increment of testable functionality.
 
-**Technology Dependencies:**
-- **ethers.js** - Blockchain interaction library
-  - Risk: Breaking changes in v7.x
-  - Mitigation: Pin to v6.x, monitor changelog
-- **x402 Protocol** - Handshake layer
-  - Risk: Protocol changes or instability
-  - Mitigation: Vendor x402 code if needed
-- **Base/Optimism Testnets** - Smart contract deployment
-  - Risk: Testnet instability or resets
-  - Mitigation: Support multiple testnets, local dev network
+**Epic 1: Foundation & Protocol Core**
+Establish project infrastructure, implement x402 handshake, WebSocket streaming, and payment channel management to enable basic bidirectional micropayments.
 
-**Service Dependencies:**
-- **Alchemy/Infura** - RPC providers
-  - Risk: Rate limiting or downtime
-  - Mitigation: Multiple provider fallback
-- **GitHub** - CI/CD and hosting
-  - Risk: Service outages
-  - Mitigation: Local development environment
+**Epic 2: Smart Contract Suite & Testnet Deployment**
+Deploy bidirectional payment channel contracts to Base/Optimism testnets with security verification and gas optimization.
 
-### 8.2 Risk Register
+**Epic 3: Multi-Language SDK Development**
+Create production-ready SDKs for TypeScript, Python, Go, and Rust with comprehensive documentation and interoperability testing.
 
-| Risk | Probability | Impact | Mitigation Strategy | Owner |
-|------|-------------|--------|---------------------|-------|
-| Smart contract vulnerability discovered | Medium | Critical | Professional audit, bug bounty, testnet only | Tech Lead |
-| x402 protocol changes break integration | Low | High | Version pin, abstraction layer | Dev Team |
-| Performance targets not met | Medium | High | Early benchmarking, profiling, optimization sprint | Tech Lead |
-| RFC rejected by standards body | Low | Medium | Community engagement, reference implementations | Product Owner |
-| Developer adoption lower than expected | Medium | Medium | Marketing, tutorials, hackathons | Product Owner |
-| Security audit reveals critical issues | Medium | Critical | Fix before mainnet, delay launch if needed | Tech Lead |
-| Testnet instability blocks development | Low | Medium | Local network for development | Dev Team |
-| SDK API inconsistencies across languages | Medium | Medium | API design review, consistency checklist | Tech Lead |
+**Epic 4: RFC Specification & Standards Submission**
+Produce IETF/W3C-ready RFC specification with security analysis, packet format definitions, and interoperability requirements.
 
-### 8.3 Assumptions
-
-**Technical Assumptions:**
-- WebSocket connection stability adequate for production use
-- EIP-712 signatures remain standard for typed data signing
-- Payment channel concept understood by target developers
-- JSON encoding overhead acceptable for performance targets
-
-**Business Assumptions:**
-- Market demand exists for M2M micropayment solutions
-- Developers willing to adopt new protocol
-- Testnet sufficient for initial validation
-- Open-source model attracts contributors
-
-**Resource Assumptions:**
-- Development team available full-time for 12 weeks
-- Testnet ETH available for deployment and testing
-- RPC provider free tier sufficient for testing
-- Security audit budget available if needed
+**Epic 5: Demo Applications & Ecosystem Validation**
+Build IoT, AI agent, and API monetization demos to prove protocol viability and provide reference implementations for developers.
 
 ---
 
-## 9. Open Questions
+## Epic 1: Foundation & Protocol Core
 
-**Technical Questions:**
+**Goal:** Establish the foundational project infrastructure and implement the core BIMP protocol, including x402 handshake, WebSocket streaming, payment channel management, and signature verification. This epic delivers a working reference implementation capable of establishing channels, streaming payments bidirectionally, and settling on-chain.
 
-**Q1: Should we support HTTP/2 in addition to HTTP/1.1 for handshake?**
-- **Impact:** Performance improvement for multiple parallel handshakes
-- **Decision Needed By:** Week 2
-- **Stakeholders:** Tech Lead, Backend Developers
-- **Recommendation:** Start with HTTP/1.1, add HTTP/2 in v1.1
+### Story 1.1: Project Setup & Monorepo Configuration
 
-**Q2: What is the optimal default settlement threshold?**
-- **Impact:** Balance between gas costs and settlement frequency
-- **Decision Needed By:** Week 3
-- **Stakeholders:** Product Owner, Blockchain Engineers
-- **Recommendation:** Make configurable, default to 10,000 base units
+As a developer,
+I want a properly configured Turborepo monorepo with TypeScript, linting, and testing,
+so that I can develop consistently across all packages with automated quality checks.
 
-**Q3: Should Lightning Network support be in Phase 1 or Phase 2?**
-- **Impact:** Timeline and complexity
-- **Decision Needed By:** Week 1
-- **Stakeholders:** Product Owner, Tech Lead
-- **Recommendation:** Phase 1 adapter interface, Phase 2 Lightning implementation
+**Acceptance Criteria:**
+1. Turborepo initialized with workspace configuration in root
+2. Root package.json with shared scripts (build, test, lint, typecheck)
+3. TypeScript 5.3 configured with strict mode in root tsconfig.json
+4. ESLint + Prettier configured with shared rules across packages
+5. Vitest configured for unit testing with coverage reporting
+6. packages/ directory structure created with protocol, contracts, shared subdirectories
+7. .gitignore configured to exclude node_modules, dist, coverage
+8. CI/CD pipeline (GitHub Actions) runs lint + typecheck + test on PR
+9. README with setup instructions (npm install, npm run build, npm test)
+10. All commands run successfully and produce zero errors/warnings
 
-**Business Questions:**
+### Story 1.2: Core Protocol Types & Interfaces
 
-**Q4: Should we target IETF or W3C for RFC submission?**
-- **Impact:** Standards track and community engagement
-- **Decision Needed By:** Week 5
-- **Stakeholders:** Product Owner, Protocol Researcher
-- **Recommendation:** IETF for transport protocol, W3C for web APIs
+As a protocol implementer,
+I want TypeScript type definitions for all BIMP protocol packets and interfaces,
+so that I have type-safe development and clear protocol boundaries.
 
-**Q5: What license should smart contracts use?**
-- **Impact:** Adoption and derivatives
-- **Decision Needed By:** Week 2
-- **Stakeholders:** Legal, Product Owner
-- **Recommendation:** MIT license for maximum permissiveness
+**Acceptance Criteria:**
+1. `packages/protocol/src/types.ts` defines all BIMP packet types
+2. Packet types include: CONNECT, CONNECTED, PAYMENT, DATA, CONTROL, ERROR
+3. PaymentState interface defined with channelId, stateNumber, totalClaimable, signature
+4. Channel interface defined with id, parties, balances, expiry
+5. IBIMPSettlementAdapter interface defined for pluggable backends
+6. All types exported from packages/protocol/src/index.ts
+7. 100% JSDoc coverage on all exported types
+8. Unit tests validate type definitions compile without errors
 
-**Q6: Should we charge for SDK access or keep fully open source?**
-- **Impact:** Business model and adoption
-- **Decision Needed By:** Week 4
-- **Stakeholders:** Product Owner, Management
-- **Recommendation:** Fully open source to maximize adoption
+### Story 1.3: x402 Handshake Integration
+
+As a BIMP client,
+I want to establish a payment channel using the x402 HTTP 402 handshake,
+so that I can set up a channel before streaming payments.
+
+**Acceptance Criteria:**
+1. Client sends HTTP GET request to protected resource
+2. Server responds with 402 Payment Required status and x402 payment details
+3. Client pays setup fee via x402 protocol (using x402 SDK)
+4. Server verifies x402 payment receipt
+5. Server creates payment channel on-chain (state channel contract)
+6. Server returns channel credentials (channelId, streamEndpoint, bearerToken)
+7. Client stores credentials for WebSocket upgrade
+8. Full handshake flow completes in <30 seconds
+9. Unit tests mock x402 SDK and verify handshake logic
+10. Integration test uses testnet to verify end-to-end flow
+
+### Story 1.4: WebSocket Connection & BIMP Session Establishment
+
+As a BIMP client,
+I want to upgrade my HTTP connection to WebSocket and establish a BIMP session,
+so that I can stream payments bidirectionally.
+
+**Acceptance Criteria:**
+1. Client upgrades connection to WebSocket using bearer token from x402 handshake
+2. Server validates bearer token and accepts WebSocket upgrade
+3. Client sends CONNECT packet with channelId
+4. Server validates channelId and responds with CONNECTED packet
+5. CONNECTED packet includes session limits (sendMax, receiveMax)
+6. Client and server enter STREAMING state after CONNECTED
+7. Connection lifecycle tracked in state machine (INIT → CONNECTING → CONNECTED → STREAMING)
+8. Invalid tokens rejected with 401 Unauthorized
+9. Invalid channelId rejected with BIMP ERROR packet (error code 4000)
+10. Unit tests verify state transitions and error handling
+
+### Story 1.5: Payment Packet Signing & Verification
+
+As a BIMP protocol participant,
+I want to sign and verify payment state commitments using EIP-712,
+so that payments are cryptographically secure and enforceable on-chain.
+
+**Acceptance Criteria:**
+1. Payment packet contains: channelId, stateNumber, totalClaimable, signature
+2. Signature generated using EIP-712 typed data signing
+3. State numbers are monotonically increasing (prevents replay attacks)
+4. Signature verification recovers payer address
+5. Invalid signatures rejected with error code 4010 (Invalid Signature)
+6. Non-monotonic state numbers rejected with error code 4011 (Invalid State Number)
+7. Signature verification completes in <50ms (p95)
+8. Unit tests verify signature generation and verification logic
+9. Integration tests verify signature compatibility with smart contracts
+
+### Story 1.6: Bidirectional Payment Streaming
+
+As a BIMP protocol participant,
+I want to send and receive payment packets bidirectionally over the WebSocket connection,
+so that both parties can stream value simultaneously.
+
+**Acceptance Criteria:**
+1. Client can send PAYMENT packets to server with signed state commitments
+2. Server can send PAYMENT packets to client with signed state commitments
+3. Both parties maintain separate balances (clientBalance, serverBalance)
+4. Each PAYMENT packet updates the respective balance
+5. DATA packets can be interleaved with PAYMENT packets for application payloads
+6. Payment verification is asynchronous (doesn't block message handling)
+7. Throughput: >1000 messages/second on single connection
+8. Memory per connection: <1MB
+9. Unit tests verify bidirectional payment logic
+10. Integration tests demonstrate simultaneous two-way payments
+
+### Story 1.7: Settlement Adapter Interface
+
+As a protocol implementer,
+I want a pluggable settlement adapter interface,
+so that BIMP can support multiple payment backends (x402, state channels, Lightning).
+
+**Acceptance Criteria:**
+1. IBIMPSettlementAdapter interface defined with methods: createChannel, settle, closeChannel
+2. x402SettlementAdapter implementation for direct x402 settlements
+3. StateChannelAdapter implementation for Ethereum state channels
+4. Adapter configuration in BIMPServer and BIMPClient constructors
+5. Adapter selection based on server capabilities advertised in 402 response
+6. Each adapter implementation has >90% test coverage
+7. Unit tests mock adapter interface and verify protocol logic
+8. Integration tests verify x402 adapter with x402 SDK
+
+### Story 1.8: Channel Settlement & Closure
+
+As a BIMP protocol participant,
+I want to settle the final channel state on-chain and close the channel,
+so that I can claim my funds and free up locked capital.
+
+**Acceptance Criteria:**
+1. Either party can initiate settlement by submitting signed state to smart contract
+2. Smart contract verifies signature and state number
+3. Smart contract transfers balances according to signed state
+4. Channel marked as closed after successful settlement
+5. Remaining funds refunded after channel expiry
+6. Settlement transaction completes in <15 seconds on testnet
+7. Gas costs <$0.01 per settlement (on Base L2)
+8. Unit tests verify settlement logic with mocked blockchain
+9. Integration tests settle channels on testnet and verify balances
 
 ---
 
-## Appendices
+## Epic 2: Smart Contract Suite & Testnet Deployment
 
-### Appendix A: Glossary
+**Goal:** Develop, test, and deploy the smart contract suite for bidirectional payment channels to Base Sepolia and Optimism Sepolia testnets. This epic delivers production-ready, audited smart contracts with verified security properties, gas optimization, and comprehensive testing.
 
-- **BIMP** - Bidirectional Interledger Micropayment Protocol
-- **x402** - HTTP 402 payment protocol for handshake layer
-- **Payment Channel** - Off-chain scaling solution for high-frequency payments
-- **State Commitment** - Signed message authorizing recipient to claim funds
-- **Unilateral Settlement** - Ability to close channel without counterparty cooperation
-- **Settlement Adapter** - Pluggable interface for different payment backends
-- **EIP-712** - Ethereum standard for typed structured data hashing and signing
-- **HTLC** - Hash Time-Locked Contract used in Lightning Network
+### Story 2.1: Channel Factory Contract Implementation
 
-### Appendix B: References
+As a blockchain developer,
+I want a smart contract that creates and manages bidirectional payment channels,
+so that BIMP protocol participants can lock funds and settle off-chain payments.
 
-**Protocol Specifications:**
-- BIMP Protocol Specification v1.0 (this repository)
-- x402 Protocol: https://github.com/coinbase/x402
-- Lightning Network BOLTs: https://github.com/lightning/bolts
-- Interledger Protocol: https://interledger.org
+**Acceptance Criteria:**
+1. `createChannel()` function creates new bidirectional channels with specified parties and capacity
+2. `deposit()` function allows parties to fund channels after creation
+3. `settle()` function enables unilateral settlement with signed state commitment
+4. `closeChannel()` function refunds remaining balances after channel expiry
+5. Channel struct stores: id, parties (client, server), balances, lastStateNumber, expiresAt, isOpen
+6. Events emitted for all state changes: ChannelCreated, ChannelFunded, ChannelSettled, ChannelClosed
+7. Solidity 0.8.24 used with SafeMath (overflow protection)
+8. Contract compiles without errors or warnings
+9. Hardhat test suite covers all functions with >95% coverage
+10. Gas reporter shows costs within acceptable range (<$0.01 per operation)
 
-**Standards:**
-- RFC 7231 - HTTP Status Code 402
-- RFC 6455 - WebSocket Protocol
-- EIP-712 - Typed structured data hashing and signing
+### Story 2.2: Signature Verification & Replay Protection
 
-**Research:**
-- Payment Channel Survey Paper (2016)
-- State Channels: A Practical Guide (2019)
-- Micropayments for Decentralized Currencies (2017)
+As a smart contract developer,
+I want the contract to verify EIP-712 signatures and enforce state number monotonicity,
+so that fraudulent settlements and replay attacks are prevented.
 
-### Appendix C: Acceptance Criteria Checklist
+**Acceptance Criteria:**
+1. `settle()` function verifies EIP-712 signature on payment state
+2. Signature recovery identifies signer address and validates against channel party
+3. State number must be greater than lastStateNumber (monotonic)
+4. Invalid signatures revert with "Invalid signature" error
+5. Non-monotonic state numbers revert with "Invalid state number" error
+6. EIP-712 domain separator includes contract address and chain ID
+7. TypedDataHash matches off-chain signing format (protocol implementation)
+8. Unit tests verify signature verification with valid/invalid signatures
+9. Unit tests verify replay attack prevention with duplicate state numbers
+10. Integration tests verify signature compatibility with ethers.js signing
 
-This checklist must be completed before considering the project "done":
+### Story 2.3: Reentrancy Protection & Security Hardening
 
-**Phase 1: Core Protocol**
-- [ ] Reference implementation builds without errors
-- [ ] All unit tests passing (>90% coverage)
-- [ ] Integration tests demonstrate complete flow
-- [ ] Performance benchmarks meet targets
-- [ ] Security scan shows zero critical issues
-- [ ] Code review completed and approved
+As a smart contract security engineer,
+I want the contract to be protected against reentrancy and other common vulnerabilities,
+so that user funds are secure and the contract is auditable.
 
-**Phase 2: Smart Contracts**
-- [ ] Contracts deployed to Base Sepolia
-- [ ] Contracts deployed to Optimism Sepolia
-- [ ] Contracts verified on block explorers
-- [ ] Gas costs within acceptable range
-- [ ] Deployment documentation complete
+**Acceptance Criteria:**
+1. ReentrancyGuard applied to all payable functions (createChannel, deposit, settle, closeChannel)
+2. Checks-Effects-Interactions pattern enforced in all functions
+3. Access control: only channel parties can settle or close their channel
+4. Gas limit checks on all loops (prevent DoS via unbounded iteration)
+5. SafeMath used for all arithmetic operations
+6. No delegatecall or selfdestruct usage
+7. Hardhat security analysis passes with zero high/critical issues
+8. Slither static analysis passes with zero high/critical issues
+9. Unit tests verify reentrancy protection with malicious contracts
+10. Unit tests verify access control with unauthorized callers
 
-**Phase 3: SDKs**
-- [ ] TypeScript SDK published to npm
-- [ ] Python SDK published to PyPI
-- [ ] Go SDK published as Go module
-- [ ] Rust SDK published to crates.io
-- [ ] All SDKs have "Hello World" examples
-- [ ] API consistency verified across languages
-- [ ] SDK documentation complete
+### Story 2.4: Testnet Deployment - Base Sepolia
 
-**Phase 4: RFC**
-- [ ] RFC draft in IETF format
-- [ ] Packet formats specified in ABNF
-- [ ] Security considerations complete
-- [ ] Submitted to IETF or W3C
-- [ ] Community feedback process initiated
+As a protocol deployer,
+I want to deploy the Channel Factory contract to Base Sepolia testnet,
+so that BIMP protocol can be tested with real blockchain interactions.
 
-**Phase 5: Demos**
-- [ ] IoT demo functional
-- [ ] AI agent demo functional
-- [ ] API monetization demo functional
-- [ ] All demos documented with READMEs
-- [ ] Video walkthroughs published
+**Acceptance Criteria:**
+1. Hardhat deployment script for Base Sepolia configured
+2. Deployment script funds deployer wallet with testnet ETH
+3. Contract deployed to Base Sepolia with constructor parameters
+4. Contract address saved to deployments/base-sepolia.json
+5. Contract verified on Basescan block explorer
+6. Deployment documentation includes contract address and verification link
+7. Gas costs logged and within acceptable range
+8. Smoke test: create channel, deposit funds, settle, close channel on testnet
+9. README updated with testnet deployment instructions
+10. Deployment completes successfully without errors
 
-**Final Acceptance:**
-- [ ] All acceptance criteria met
-- [ ] Documentation complete and reviewed
-- [ ] Performance targets achieved
-- [ ] Security audit passed (if required)
-- [ ] Stakeholder sign-off obtained
+### Story 2.5: Testnet Deployment - Optimism Sepolia
+
+As a protocol deployer,
+I want to deploy the Channel Factory contract to Optimism Sepolia testnet,
+so that BIMP protocol supports multiple L2 ecosystems.
+
+**Acceptance Criteria:**
+1. Hardhat deployment script for Optimism Sepolia configured
+2. Deployment script funds deployer wallet with testnet ETH (via Optimism faucet)
+3. Contract deployed to Optimism Sepolia with constructor parameters
+4. Contract address saved to deployments/optimism-sepolia.json
+5. Contract verified on Optimistic Etherscan block explorer
+6. Deployment documentation includes contract address and verification link
+7. Gas costs logged and compared to Base Sepolia deployment
+8. Smoke test: create channel, deposit funds, settle, close channel on testnet
+9. README updated with Optimism testnet deployment instructions
+10. Deployment completes successfully without errors
+
+### Story 2.6: Gas Optimization & Benchmarking
+
+As a protocol optimizer,
+I want to minimize gas costs for all contract operations,
+so that BIMP protocol is economically viable for micropayments.
+
+**Acceptance Criteria:**
+1. Gas reporter enabled for all Hardhat tests
+2. Gas costs measured for: createChannel, deposit, settle, closeChannel
+3. Storage layout optimized (struct packing, minimal storage writes)
+4. Function visibility optimized (external vs public)
+5. Events used instead of storage where appropriate
+6. Gas costs <$0.01 per operation on Base L2 (at current gas prices)
+7. Gas optimization document created with before/after metrics
+8. Benchmarking script measures gas costs across different scenarios
+9. Gas costs compared to target (NFR requirements)
+10. All optimizations maintain >95% test coverage
 
 ---
 
-**Document Status:** Draft
+## Epic 3: Multi-Language SDK Development
+
+**Goal:** Create production-ready SDKs for TypeScript, Python, Go, and Rust that provide idiomatic APIs for BIMP protocol integration. This epic delivers published packages, comprehensive documentation, and interoperability validation across all languages.
+
+### Story 3.1: TypeScript SDK - Core Client & Server
+
+As a TypeScript developer,
+I want a BIMP SDK with BIMPClient and BIMPServer classes,
+so that I can integrate BIMP payments into my Node.js applications.
+
+**Acceptance Criteria:**
+1. packages/sdk-ts created with TypeScript 5.3 configuration
+2. BIMPClient class implements: connect(), sendPayment(), waitForResponse(), close()
+3. BIMPServer class implements: start(), stop(), onPayment(), onData()
+4. Settlement adapter abstraction supports x402 and state channel backends
+5. Full TypeScript type definitions for all public APIs
+6. Promise-based async API (async/await compatible)
+7. Event emitters for connection lifecycle events
+8. 100% JSDoc coverage on all public APIs
+9. Unit tests cover all client and server methods (>90% coverage)
+10. README with "Hello World" example in <30 lines of code
+
+### Story 3.2: TypeScript SDK - Publishing & Documentation
+
+As a TypeScript developer,
+I want the BIMP SDK published to npm with comprehensive documentation,
+so that I can easily install and learn the SDK.
+
+**Acceptance Criteria:**
+1. Package published to npm as @bimp/sdk (scoped package)
+2. Package includes TypeScript declarations (.d.ts files)
+3. Package includes ESM and CommonJS builds (dual-module support)
+4. Semantic versioning used (v1.0.0 for initial release)
+5. README includes: installation, quick start, API reference, examples
+6. API documentation generated with TypeDoc
+7. Documentation site deployed (GitHub Pages or Vercel)
+8. Examples directory with: hello-world, client-server, multi-channel
+9. npm package page includes description, keywords, repository link
+10. Package installs successfully and examples run without errors
+
+### Story 3.3: Python SDK - Core Client & Server
+
+As a Python developer,
+I want a BIMP SDK with BIMPClient and BIMPServer classes for asyncio,
+so that I can integrate BIMP payments into my Python applications.
+
+**Acceptance Criteria:**
+1. packages/sdk-py created with Python 3.11+ configuration (pyproject.toml)
+2. BIMPClient class implements: connect(), send_payment(), wait_for_response(), close()
+3. BIMPServer class implements: start(), stop(), on_payment(), on_data()
+4. Settlement adapter abstraction supports x402 and state channel backends
+5. Type hints (PEP 484) on all public APIs
+6. Async/await support via asyncio
+7. Error handling with custom exceptions (BIMPError, SignatureError, etc.)
+8. Unit tests with pytest cover all methods (>90% coverage)
+9. README with "Hello World" example in <30 lines of code
+10. Package structure follows Python best practices (src layout)
+
+### Story 3.4: Python SDK - Publishing & Documentation
+
+As a Python developer,
+I want the BIMP SDK published to PyPI with comprehensive documentation,
+so that I can easily install and learn the SDK.
+
+**Acceptance Criteria:**
+1. Package published to PyPI as bimp-sdk
+2. Package includes type stubs for type checking
+3. Semantic versioning used (v1.0.0 for initial release)
+4. README includes: installation, quick start, API reference, examples
+5. API documentation generated with Sphinx
+6. Documentation site deployed (ReadTheDocs or GitHub Pages)
+7. Examples directory with: hello-world, client-server, multi-channel
+8. PyPI package page includes description, keywords, repository link
+9. Package installs successfully with pip: `pip install bimp-sdk`
+10. Examples run without errors
+
+### Story 3.5: Go SDK - Core Client & Server
+
+As a Go developer,
+I want a BIMP SDK with idiomatic Go Client and Server types,
+so that I can integrate BIMP payments into my Go applications.
+
+**Acceptance Criteria:**
+1. packages/sdk-go created with Go 1.21+ and go.mod
+2. bimp.Client type implements: Connect(), SendPayment(), WaitForResponse(), Close()
+3. bimp.Server type implements: Start(), Stop(), OnPayment(), OnData()
+4. Settlement adapter interface for pluggable backends
+5. Context support for cancellation and timeouts
+6. Error types follow Go conventions (wrap errors with context)
+7. Goroutine-safe implementations (concurrent usage supported)
+8. Unit tests with testify cover all methods (>90% coverage)
+9. README with "Hello World" example in <30 lines of code
+10. Go module published with semantic versioning (v1.0.0)
+
+### Story 3.6: Go SDK - Publishing & Documentation
+
+As a Go developer,
+I want the BIMP SDK published as a Go module with comprehensive documentation,
+so that I can easily import and learn the SDK.
+
+**Acceptance Criteria:**
+1. Go module published with semantic versioning (v1.0.0 tag)
+2. Module importable via: `import "github.com/bimp-protocol/sdk-go/bimp"`
+3. GoDoc documentation generated for all public APIs
+4. README includes: installation, quick start, API reference, examples
+5. Examples directory with: hello-world, client-server, multi-channel
+6. Code examples use canonical Go conventions (error handling, resource cleanup)
+7. Go module proxy serves the module (pkg.go.dev)
+8. Module installs successfully: `go get github.com/bimp-protocol/sdk-go`
+9. Examples compile and run without errors
+10. GoDoc badge added to README
+
+### Story 3.7: Rust SDK - Core Client & Server
+
+As a Rust developer,
+I want a BIMP SDK with safe Rust BimpClient and BimpServer structs,
+so that I can integrate BIMP payments into my Rust applications.
+
+**Acceptance Criteria:**
+1. packages/sdk-rust created with Rust 1.75+ and Cargo.toml
+2. BimpClient struct implements: connect(), send_payment(), wait_for_response(), close()
+3. BimpServer struct implements: start(), stop(), on_payment(), on_data()
+4. Settlement adapter trait for pluggable backends
+5. Async/await support via tokio runtime
+6. No unsafe code in public API
+7. Error handling with Result types and custom error enums
+8. Unit tests with cargo test cover all methods (>90% coverage)
+9. README with "Hello World" example in <30 lines of code
+10. Crate structure follows Rust best practices (lib.rs, modules)
+
+### Story 3.8: Rust SDK - Publishing & Documentation
+
+As a Rust developer,
+I want the BIMP SDK published to crates.io with comprehensive documentation,
+so that I can easily install and learn the SDK.
+
+**Acceptance Criteria:**
+1. Crate published to crates.io as bimp-sdk
+2. Semantic versioning used (v1.0.0 for initial release)
+3. Rustdoc documentation generated for all public APIs
+4. README includes: installation, quick start, API reference, examples
+5. Examples directory with: hello-world, client-server, multi-channel
+6. docs.rs automatically builds and hosts documentation
+7. Crate metadata includes description, keywords, repository link
+8. Crate installs successfully: `cargo add bimp-sdk`
+9. Examples compile and run without errors
+10. Documentation badge added to README
+
+### Story 3.9: SDK Interoperability Testing
+
+As a protocol maintainer,
+I want to verify that all SDKs can interoperate with each other,
+so that developers can mix and match languages in BIMP applications.
+
+**Acceptance Criteria:**
+1. Integration test suite tests all SDK pairs (TS-Python, TS-Go, TS-Rust, Python-Go, etc.)
+2. Each test establishes channel with one SDK as client, another as server
+3. Tests verify: handshake, payment streaming, bidirectional payments, settlement
+4. Tests use real testnet contracts (Base Sepolia)
+5. API consistency checklist verifies method names, parameters, return types
+6. Error code consistency verified across all SDKs
+7. Performance benchmarks compare throughput and latency across SDKs
+8. All interoperability tests pass (zero failures)
+9. Interoperability matrix documented in README
+10. CI runs interoperability tests on every SDK change
+
+---
+
+## Epic 4: RFC Specification & Standards Submission
+
+**Goal:** Produce an IETF/W3C-ready RFC specification document that formally defines the BIMP protocol, including packet formats, security considerations, and interoperability requirements. This epic delivers a standards-track submission with community feedback incorporated.
+
+### Story 4.1: RFC Structure & Boilerplate
+
+As a standards contributor,
+I want an RFC document following IETF style guidelines,
+so that BIMP can be submitted to the standards track.
+
+**Acceptance Criteria:**
+1. RFC document created in IETF format (docs/rfc-bimp.md)
+2. Document includes required sections: Abstract, Introduction, Specification, Security Considerations, IANA Considerations, References
+3. IETF boilerplate (Status of This Memo, Copyright Notice) included
+4. Authors section lists contributors with affiliations
+5. Document follows RFC 7991 formatting guidelines
+6. Table of Contents generated automatically
+7. Section numbering follows IETF conventions
+8. Terminology section defines key terms (channel, state commitment, etc.)
+9. Document renders correctly in RFC XML tools
+10. README includes instructions for building RFC output (text, HTML, PDF)
+
+### Story 4.2: Abstract & Introduction
+
+As a protocol researcher,
+I want a clear abstract and introduction explaining BIMP's purpose and design,
+so that reviewers understand the protocol's goals and approach.
+
+**Acceptance Criteria:**
+1. Abstract (200 words) summarizes: problem, solution, key features
+2. Introduction section explains: M2M payment challenges, existing solutions, BIMP's approach
+3. Design goals articulated: simplicity, bidirectionality, multi-backend support
+4. Non-goals clearly stated: multi-hop routing, mainnet deployment (v1.0)
+5. Target use cases described: IoT, AI agents, API monetization
+6. Comparison to related protocols: ILP/STREAM, Lightning, Raiden
+7. Scope clearly defined: protocol specification only, not implementation details
+8. Audience identified: protocol implementers, standards bodies, researchers
+9. Document status indicated: Draft (for initial submission)
+10. Revision history table included
+
+### Story 4.3: Packet Format Specification (ABNF)
+
+As a protocol implementer,
+I want formal packet format definitions in ABNF notation,
+so that I can implement BIMP correctly and unambiguously.
+
+**Acceptance Criteria:**
+1. All BIMP packet types defined in ABNF: CONNECT, CONNECTED, PAYMENT, DATA, CONTROL, ERROR
+2. ABNF follows RFC 5234 conventions
+3. Packet structure includes: header (type, length), payload (JSON or binary)
+4. PaymentState structure defined: channelId, stateNumber, totalClaimable, signature
+5. EIP-712 signature format specified
+6. Encoding rules specified: UTF-8 for text, hex for addresses/signatures
+7. Maximum packet sizes specified (e.g., 64KB for DATA packets)
+8. Example packets provided for each type
+9. Wire format diagrams included for clarity
+10. ABNF validates successfully with ABNF validation tools
+
+### Story 4.4: Protocol Flow Specification
+
+As a protocol implementer,
+I want detailed specifications of all protocol flows,
+so that I can implement correct state transitions and error handling.
+
+**Acceptance Criteria:**
+1. Handshake flow specified: x402 negotiation → channel creation → WebSocket upgrade
+2. Session establishment flow specified: CONNECT → CONNECTED → STREAMING
+3. Payment streaming flow specified: PAYMENT packet exchange, balance updates
+4. Settlement flow specified: signed state submission → on-chain verification
+5. Error handling flows specified for all error codes (4000-4099)
+6. State machine diagram included showing all connection states
+7. Sequence diagrams included for each major flow
+8. Timeout behaviors specified (connection timeout, settlement timeout)
+9. Reconnection strategy specified (exponential backoff)
+10. Edge cases documented (concurrent settlements, channel expiry)
+
+### Story 4.5: Security Considerations
+
+As a security researcher,
+I want comprehensive security analysis of BIMP protocol,
+so that I can evaluate its security properties and identify potential vulnerabilities.
+
+**Acceptance Criteria:**
+1. Threat model defined: adversary capabilities, attack vectors
+2. Signature security analyzed: EIP-712 properties, key management
+3. Replay attack prevention analyzed: state number monotonicity
+4. DoS attack prevention analyzed: rate limiting, resource limits
+5. Channel griefing prevention analyzed: expiry, unilateral settlement
+6. Transport security analyzed: TLS requirements, MITM prevention
+7. Smart contract security analyzed: reentrancy, access control, overflow
+8. Known vulnerabilities documented with mitigations
+9. Security assumptions explicitly stated (e.g., honest RPC providers)
+10. References to relevant security standards (TLS 1.3, EIP-712)
+
+### Story 4.6: IANA Considerations
+
+As a standards contributor,
+I want IANA considerations documented for protocol registrations,
+so that BIMP can be assigned official protocol identifiers.
+
+**Acceptance Criteria:**
+1. WebSocket subprotocol registration requested: "bimp.v1"
+2. HTTP header registration requested: "BIMP-Channel-Id"
+3. Error code registry defined: 4000-4099 for BIMP errors
+4. MIME type registration requested: "application/bimp+json"
+5. URI scheme registration requested: "bimp://"
+6. Port number considerations documented (default: 8080 for HTTP, 443 for HTTPS)
+7. Registration templates provided for each requested registration
+8. Contact information for protocol maintainers included
+9. Interoperability considerations documented
+10. IANA Considerations section follows RFC 8126 guidelines
+
+### Story 4.7: Interoperability Requirements
+
+As a protocol implementer,
+I want clear interoperability requirements and test vectors,
+so that my implementation can be validated against the specification.
+
+**Acceptance Criteria:**
+1. Interoperability requirements specified: MUST implement features vs MAY implement features
+2. Conformance levels defined: minimal, standard, full
+3. Test vectors provided: sample packets with expected signatures
+4. Signature test vectors: EIP-712 domain separator, typed data, signatures
+5. Channel lifecycle test vectors: create, fund, pay, settle
+6. Error condition test vectors: invalid signatures, replay attempts
+7. Interoperability checklist provided for implementers
+8. Reference implementation cited (TypeScript SDK)
+9. Known implementation variations documented
+10. Compliance statement template provided
+
+### Story 4.8: References & Acknowledgments
+
+As a standards contributor,
+I want complete references and acknowledgments,
+so that BIMP RFC properly credits prior work and contributors.
+
+**Acceptance Criteria:**
+1. Normative references section includes: EIP-712, RFC 6455 (WebSocket), RFC 7231 (HTTP)
+2. Informative references section includes: ILP, Lightning, Raiden, x402
+3. References follow IETF citation format
+4. DOIs or stable URLs provided for all references
+5. Acknowledgments section thanks contributors and reviewers
+6. Copyright and license statement included (MIT or CC0)
+7. Contact information for authors provided
+8. Mailing list or GitHub issues link for feedback
+9. Revision history documents major changes
+10. All references are accessible and current
+
+### Story 4.9: Community Review & Feedback Incorporation
+
+As a standards contributor,
+I want to solicit community feedback on the BIMP RFC draft,
+so that the specification is reviewed and improved before formal submission.
+
+**Acceptance Criteria:**
+1. RFC draft posted to IETF mailing list or GitHub discussions
+2. Feedback solicited from: protocol researchers, implementers, security experts
+3. Minimum 10 substantive comments received and addressed
+4. Feedback tracking document maintains: comment, response, action taken
+5. Major feedback incorporated into RFC draft (new sections, clarifications)
+6. Controversial issues documented with rationale for decisions
+7. Second draft published incorporating feedback
+8. Community review period (2-4 weeks) completed
+9. Final draft approved by community reviewers
+10. Submission readiness checklist completed
+
+### Story 4.10: RFC Submission to IETF/W3C
+
+As a standards contributor,
+I want to submit the BIMP RFC to IETF or W3C for formal standardization,
+so that BIMP becomes a recognized internet standard.
+
+**Acceptance Criteria:**
+1. Submission target determined: IETF (transport protocol) or W3C (web APIs)
+2. Working group identified: IETF HTTP WG or W3C Web Payments WG
+3. Submission package prepared: RFC draft, cover letter, supporting materials
+4. RFC draft converted to required format (XML for IETF, HTML for W3C)
+5. Submission checklist completed (formatting, references, boilerplate)
+6. Draft submitted to working group chairs or editors
+7. Submission acknowledgment received
+8. Tracking number assigned for RFC draft
+9. Initial feedback from working group received and documented
+10. Submission announced to BIMP community
+
+---
+
+## Epic 5: Demo Applications & Ecosystem Validation
+
+**Goal:** Build three production-quality demo applications (IoT, AI agent, API monetization) that showcase BIMP protocol viability, provide reference implementations for developers, and validate protocol design across different use cases.
+
+### Story 5.1: IoT Sensor Data Marketplace - Setup & Infrastructure
+
+As an IoT developer,
+I want a simulated IoT sensor that publishes data via BIMP payments,
+so that I can demonstrate pay-per-query IoT data monetization.
+
+**Acceptance Criteria:**
+1. packages/demo-iot created with TypeScript configuration
+2. Simulated sensor service generates temperature data (random walk)
+3. BIMPServer configured to accept payment for data queries
+4. x402 handshake integrated for channel establishment
+5. REST API endpoint: GET /sensor/temperature (requires BIMP payment)
+6. Payment amount configurable (default: 100 wei per query)
+7. Docker Compose configuration for sensor + client
+8. README with architecture overview and setup instructions
+9. Environment configuration for testnet deployment (Base Sepolia)
+10. Demo runs successfully in Docker with zero errors
+
+### Story 5.2: IoT Sensor Data Marketplace - Client Implementation
+
+As a data consumer,
+I want a client that pays for IoT sensor data via BIMP,
+so that I can demonstrate end-to-end micropayment flow.
+
+**Acceptance Criteria:**
+1. Client application uses BIMPClient SDK
+2. Client establishes channel via x402 handshake
+3. Client sends PAYMENT packets for each data query
+4. Client receives temperature data in DATA packets
+5. Client displays: query count, total paid, average temperature
+6. Client handles reconnection if WebSocket disconnects
+7. Latency measured and logged (<100ms per query)
+8. Client runs continuously for configurable duration (default: 5 minutes)
+9. CLI arguments for: sensor URL, payment amount, query frequency
+10. Demo client runs successfully and logs results
+
+### Story 5.3: IoT Sensor Data Marketplace - Performance Testing
+
+As a protocol validator,
+I want to verify the IoT demo meets performance requirements,
+so that BIMP protocol is validated for IoT use cases.
+
+**Acceptance Criteria:**
+1. Performance test script measures: latency, throughput, resource usage
+2. Test runs for 24 hours continuously without errors
+3. Latency: <100ms per request (p95)
+4. Throughput: >100 queries/second
+5. Memory per connection: <1MB
+6. No memory leaks detected (memory stable over 24 hours)
+7. Channel settlement completes successfully after test
+8. Performance metrics logged to file for analysis
+9. Results compared to NFR requirements (all pass)
+10. Performance report generated with graphs and summary
+
+### Story 5.4: AI Agent Service Trading - Bidirectional Demo Setup
+
+As an AI researcher,
+I want two AI agents that trade services via bidirectional BIMP payments,
+so that I can demonstrate autonomous agent-to-agent transactions.
+
+**Acceptance Criteria:**
+1. packages/demo-ai-agent created with TypeScript configuration
+2. Agent A provides translation services (English → Spanish)
+3. Agent B provides sentiment analysis services
+4. Both agents act as BIMP client and server simultaneously
+5. Bidirectional payment channel established between agents
+6. Each service request includes: service type, input data, payment amount
+7. Agents maintain running balance (net owed/owed to)
+8. Docker Compose configuration for Agent A + Agent B
+9. README with architecture explanation and AI agent rationale
+10. Demo runs successfully with bidirectional trades
+
+### Story 5.5: AI Agent Service Trading - Autonomous Operation
+
+As an AI agent developer,
+I want agents to autonomously decide which services to purchase,
+so that I can demonstrate truly autonomous economic agents.
+
+**Acceptance Criteria:**
+1. Agent A autonomously requests sentiment analysis when receiving text
+2. Agent B autonomously requests translation when receiving non-English text
+3. Agents track service usage and costs
+4. Agents implement simple budget logic (stop trading if balance too low)
+5. Agents log all transactions with: service, cost, timestamp
+6. Net settlement calculated and logged at end of demo
+7. Agents demonstrate circular trades (A→B→A→B...)
+8. Bidirectional payment flows visible in logs
+9. Demo runs for configurable duration (default: 10 minutes)
+10. Final balances reconciled with payment logs
+
+### Story 5.6: AI Agent Service Trading - Video Walkthrough
+
+As a developer evaluating BIMP,
+I want a video demonstration of the AI agent demo,
+so that I can understand the protocol without running the demo myself.
+
+**Acceptance Criteria:**
+1. Video recorded (5-10 minutes) showing demo execution
+2. Video narration explains: bidirectional payments, agent autonomy, settlement
+3. Video shows: terminal logs, Docker containers, payment flows
+4. Video highlights: instant payments, no human intervention, net settlement
+5. Video includes architecture diagram explaining agent roles
+6. Video published to YouTube or Vimeo
+7. Video embedded in README with timestamp links to key sections
+8. Video captions added for accessibility
+9. Video announced on BIMP community channels
+10. Video views tracked (target: 100+ views in first month)
+
+### Story 5.7: API Monetization Demo - Protected API Implementation
+
+As an API provider,
+I want to monetize my REST API using BIMP payments,
+so that I can demonstrate pay-per-call API business models.
+
+**Acceptance Criteria:**
+1. packages/demo-api created with Express.js + TypeScript
+2. Protected API endpoints: GET /api/quotes, GET /api/facts
+3. Each endpoint requires BIMP payment (configurable amount)
+4. x402 handshake establishes channel before API access
+5. Bearer token from handshake authorizes WebSocket upgrade
+6. Rate limiting based on payment amount (more payment = higher rate limit)
+7. Swagger/OpenAPI spec documents API and payment requirements
+8. Postman collection includes: handshake, channel setup, API calls
+9. Docker Compose configuration for API + client
+10. README explains API monetization use case
+
+### Story 5.8: API Monetization Demo - Client SDK Integration
+
+As an API consumer,
+I want to use the BIMP SDK to access a paid API,
+so that I can demonstrate seamless payment integration.
+
+**Acceptance Criteria:**
+1. Client application uses BIMPClient SDK (TypeScript)
+2. Client performs x402 handshake to establish channel
+3. Client makes multiple API requests with PAYMENT packets
+4. Client displays: API responses, payment per request, total paid
+5. Client handles rate limiting errors gracefully
+6. Client demonstrates channel reuse across multiple requests
+7. Client settles channel after demo completion
+8. CLI tool provides easy testing: `bimp-api-client --endpoint https://api.example.com`
+9. Example integrations provided in: cURL, Python, JavaScript
+10. Client runs successfully and demonstrates end-to-end flow
+
+### Story 5.9: Demo Application Deployment & Hosting
+
+As a protocol demonstrator,
+I want all demo applications deployed to public URLs,
+so that developers can test BIMP without local setup.
+
+**Acceptance Criteria:**
+1. All demos containerized with Docker
+2. IoT demo deployed to public URL (e.g., iot-demo.bimp-protocol.org)
+3. AI agent demo deployed with public logs/dashboard
+4. API demo deployed to public URL (e.g., api-demo.bimp-protocol.org)
+5. Deployment uses testnet contracts (Base Sepolia)
+6. Deployment includes monitoring (Prometheus + Grafana)
+7. Health check endpoints available for all demos
+8. Deployment documentation includes: infrastructure, CI/CD, costs
+9. Demos run 24/7 with >99% uptime
+10. Public demo URLs included in README and RFC
+
+### Story 5.10: Ecosystem Validation Report
+
+As a product manager,
+I want a comprehensive validation report across all demos,
+so that I can demonstrate BIMP protocol readiness for production use.
+
+**Acceptance Criteria:**
+1. Report documents results from all 3 demos: IoT, AI agent, API
+2. Performance metrics compared to NFR requirements (all pass)
+3. Security testing results included (penetration test, vulnerability scan)
+4. User feedback collected from demo users (surveys or interviews)
+5. Integration time measured: <4 hours for basic use case (validated)
+6. SDK downloads tracked across all package registries
+7. GitHub stars and community engagement metrics included
+8. Ecosystem validation checklist completed (from PRD appendix)
+9. Report presented to stakeholders with recommendations
+10. Report published as blog post or white paper
+
+---
+
+## Checklist Results Report
+
+### Validation Summary
+
+The PRD has been restructured to conform to BMAD template standards. The following validation was performed during reconstruction:
+
+**Overall PRD Completeness:** 100% (all template sections present)
+**MVP Scope Appropriateness:** Just Right (5 epics, 12-week timeline, focused deliverables)
+**Readiness for Architecture Phase:** Ready (Architecture document already exists)
+
+### Category Analysis
+
+| Category                         | Status | Critical Issues |
+| -------------------------------- | ------ | --------------- |
+| 1. Problem Definition & Context  | PASS   | None            |
+| 2. MVP Scope Definition          | PASS   | None            |
+| 3. User Experience Requirements  | PASS   | N/A (backend-focused) |
+| 4. Functional Requirements       | PASS   | None            |
+| 5. Non-Functional Requirements   | PASS   | None            |
+| 6. Epic & Story Structure        | PASS   | None            |
+| 7. Technical Guidance            | PASS   | None            |
+| 8. Cross-Functional Requirements | PASS   | None            |
+| 9. Clarity & Communication       | PASS   | None            |
+
+### Key Strengths
+
+1. **Clear Problem Statement**: M2M payment space underserved, BIMP provides simplified solution
+2. **Well-Defined Personas**: 4 personas with clear pain points and value propositions
+3. **Comprehensive Requirements**: 14 functional requirements, 42 non-functional requirements
+4. **Sequential Epics**: 5 epics logically ordered with clear dependencies
+5. **Sized Stories**: All stories sized for AI agent execution (2-4 hours each)
+6. **Testable Acceptance Criteria**: All stories have 8-10 specific, verifiable criteria
+7. **Technical Assumptions Documented**: Repository structure, architecture, testing approach defined
+8. **Performance Targets**: Specific latency, throughput, resource usage targets
+
+### Recommendations
+
+1. **Architecture Alignment**: Verify Architecture document (docs/architecture.md) aligns with restructured PRD
+2. **Epic File Generation**: Create 5 epic markdown files (epic-1-foundation.md through epic-5-demo-apps.md)
+3. **Story Directory**: Create docs/stories/ directory structure for story management
+4. **Stakeholder Review**: Obtain approval from Product Owner and Technical Lead
+5. **Agent Handoff**: Proceed to PO agent for sprint planning once approved
+
+### Final Decision
+
+**✅ READY FOR NEXT PHASE**
+
+The PRD is comprehensive, properly structured according to BMAD template standards, and ready for:
+- Epic file generation
+- Sprint planning by PO/SM agent
+- Story implementation by Dev agents
+
+---
+
+## Next Steps
+
+### Epic File Generation
+
+The PM agent will now generate 5 individual epic markdown files:
+- docs/epic-1-foundation.md
+- docs/epic-2-contracts.md
+- docs/epic-3-sdks.md
+- docs/epic-4-rfc.md
+- docs/epic-5-demos.md
+
+Each epic file will contain the full epic goal and all stories with acceptance criteria for PO agent consumption.
+
+### Architect Prompt
+
+The Architecture Document has already been created at `docs/architecture.md`. The architecture should be reviewed for alignment with this PRD (v1.1.0) before implementation begins. Key alignment points to verify:
+
+1. Turborepo monorepo structure matches PRD's repository structure assumption
+2. Smart contract design aligns with FR5-FR6 (Channel Factory, Security Properties)
+3. Settlement adapter interface matches architectural patterns
+4. Testing strategy covers all NFR requirements (>90% coverage, performance benchmarks)
+5. Deployment strategy supports Base Sepolia and Optimism Sepolia testnets
+
+### PO/SM Prompt
+
+With epics defined in this PRD and individual epic files generated, the Product Owner or Scrum Master should:
+
+1. Review all 5 epic files for story sequencing and acceptance criteria completeness
+2. Begin sprint planning starting with Epic 1 (Foundation & Protocol Core)
+3. Create story tracking in docs/stories/ directory
+4. Establish sprint cadence (recommended: 2-week sprints)
+5. Assign stories to AI dev agents based on expertise and availability
+6. Monitor story completion and handle blockers or scope adjustments
+
+---
+
+**Document Status:** Draft (v1.1.0)
 **Next Review Date:** TBD
 **Approval Required From:**
 - [ ] Product Owner (Sarah)
@@ -935,4 +1321,3 @@ This checklist must be completed before considering the project "done":
 ---
 
 *This PRD is a living document and will be updated as requirements evolve and implementation progresses.*
-
