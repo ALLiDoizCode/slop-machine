@@ -1,8 +1,11 @@
-# Epic 5: Demo Applications & Ecosystem Validation
+# Epic 4: Demo Applications & Ecosystem Validation
 
 **Status:** Pending
 **Priority:** High
-**Dependencies:** Epic 3 (SDKs), Epic 2 (Smart Contracts)
+**Dependencies:**
+  - Epic 1 (RFC & Reference Implementation) - TypeScript SDK v1.0
+  - Epic 2 (Smart Contracts) - Deployed testnet contracts (Base Sepolia, Optimism Sepolia)
+  - Epic 3 (Multi-Language SDKs) - Python/Go/Rust SDKs for diverse demo implementations
 **Estimated Duration:** 4-6 weeks
 
 ---

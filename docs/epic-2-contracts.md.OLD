@@ -2,24 +2,20 @@
 
 **Status:** Pending
 **Priority:** Critical
-**Dependencies:** Epic 1 (RFC Specification & Reference Implementation)
-  - Story 1.16: EIP-712 signature implementation
-  - Story 1.17: Signature test vectors
-  - Story 1.18: Security considerations
+**Dependencies:** Epic 1 (Foundation & Protocol Core)
 **Estimated Duration:** 2-3 weeks
 
 ---
 
 ## Epic Goal
 
-Develop, test, and deploy the smart contract suite for bidirectional payment channels to Base Sepolia and Optimism Sepolia testnets. This epic **implements the signature verification and settlement logic specified in Epic 1 RFC**, delivering production-ready contracts with verified security properties, gas optimization, and comprehensive testing.
+Develop, test, and deploy the smart contract suite for bidirectional payment channels to Base Sepolia and Optimism Sepolia testnets. This epic delivers production-ready, audited smart contracts with verified security properties, gas optimization, and comprehensive testing.
 
 **Value Delivery:** By the end of this epic, BIMP protocol will have:
 - Production-ready smart contracts deployed to two L2 testnets
-- EIP-712 signature verification matching RFC Section 5.1 specification
-- Verified security properties (reentrancy protection, replay prevention)
-- Gas-optimized operations (<$0.01 per settlement on L2)
-- Comprehensive test coverage (>95%) validated against RFC test vectors
+- Verified security properties (reentrancy protection, signature verification)
+- Gas-optimized operations (<$0.01 per settlement)
+- Comprehensive test coverage (>95%)
 
 ---
 
@@ -28,13 +24,13 @@ Develop, test, and deploy the smart contract suite for bidirectional payment cha
 ### Story 2.1: Channel Factory Contract Implementation
 
 **As a** blockchain developer,
-**I want** a smart contract that creates and manages bidirectional payment channels according to RFC specification,
+**I want** a smart contract that creates and manages bidirectional payment channels,
 **so that** BIMP protocol participants can lock funds and settle off-chain payments.
 
 **Acceptance Criteria:**
 1. `createChannel()` function creates new bidirectional channels with specified parties and capacity
 2. `deposit()` function allows parties to fund channels after creation
-3. `settle()` function enables unilateral settlement with signed state commitment (RFC Section 4.3)
+3. `settle()` function enables unilateral settlement with signed state commitment
 4. `closeChannel()` function refunds remaining balances after channel expiry
 5. Channel struct stores: id, parties (client, server), balances, lastStateNumber, expiresAt, isOpen
 6. Events emitted for all state changes: ChannelCreated, ChannelFunded, ChannelSettled, ChannelClosed
@@ -45,59 +41,55 @@ Develop, test, and deploy the smart contract suite for bidirectional payment cha
 
 **Priority:** Critical
 **Estimate:** 8 hours
-**Dependencies:** Epic 1 (Stories 1.5-1.8 for packet formats, 1.15-1.18 for security spec)
+**Dependencies:** Epic 1 complete
 
 ---
 
-### Story 2.2: Signature Verification & Replay Protection (RFC Section 5.1 Implementation)
+### Story 2.2: Signature Verification & Replay Protection
 
 **As a** smart contract developer,
-**I want** the contract to verify EIP-712 signatures exactly as specified in RFC Section 5.1,
-**so that** on-chain signature verification matches off-chain signing and prevents fraudulent settlements.
+**I want** the contract to verify EIP-712 signatures and enforce state number monotonicity,
+**so that** fraudulent settlements and replay attacks are prevented.
 
 **Acceptance Criteria:**
 1. `settle()` function verifies EIP-712 signature on payment state
-2. EIP-712 domain separator matches RFC Section 5.1 specification exactly:
-   - name="BIMP", version="1", chainId, verifyingContract
-3. TypedData structure matches RFC: PaymentState { channelId, stateNumber, totalClaimable }
-4. Signature recovery identifies signer address and validates against channel party
-5. State number must be greater than lastStateNumber (monotonic - RFC Section 5.1 replay prevention)
-6. Invalid signatures revert with "Invalid signature" error
-7. Non-monotonic state numbers revert with "Invalid state number" error
-8. Unit tests use test vectors from Epic 1 (Story 1.17: docs/test-vectors/signatures.json)
-9. Integration tests verify signature compatibility with Epic 1 reference implementation (ethers.js)
-10. All security properties from RFC Section 5.1 verified through tests
+2. Signature recovery identifies signer address and validates against channel party
+3. State number must be greater than lastStateNumber (monotonic)
+4. Invalid signatures revert with "Invalid signature" error
+5. Non-monotonic state numbers revert with "Invalid state number" error
+6. EIP-712 domain separator includes contract address and chain ID
+7. TypedDataHash matches off-chain signing format (protocol implementation)
+8. Unit tests verify signature verification with valid/invalid signatures
+9. Unit tests verify replay attack prevention with duplicate state numbers
+10. Integration tests verify signature compatibility with ethers.js signing
 
 **Priority:** Critical
 **Estimate:** 6 hours
-**Dependencies:** Story 2.1, Epic 1 Story 1.16 (EIP-712 implementation), Story 1.17 (test vectors)
+**Dependencies:** Story 2.1
 
 ---
 
-### Story 2.3: Reentrancy Protection & Security Hardening (RFC Section 5.2 Implementation)
+### Story 2.3: Reentrancy Protection & Security Hardening
 
 **As a** smart contract security engineer,
-**I want** the contract to implement security mitigations from RFC Section 5.2 threat model,
+**I want** the contract to be protected against reentrancy and other common vulnerabilities,
 **so that** user funds are secure and the contract is auditable.
 
 **Acceptance Criteria:**
 1. ReentrancyGuard applied to all payable functions (createChannel, deposit, settle, closeChannel)
 2. Checks-Effects-Interactions pattern enforced in all functions
 3. Access control: only channel parties can settle or close their channel
-4. Gas limit checks on all loops (prevent DoS via unbounded iteration - RFC Section 5.2 DoS mitigation)
+4. Gas limit checks on all loops (prevent DoS via unbounded iteration)
 5. SafeMath used for all arithmetic operations
 6. No delegatecall or selfdestruct usage
-7. Implements all mitigations from RFC Section 5.2 "Threat Model":
-   - Replay attacks → state number monotonicity
-   - Channel griefing → expiry and unilateral settlement
-   - Reentrancy → ReentrancyGuard
-8. Hardhat security analysis passes with zero high/critical issues
-9. Slither static analysis passes with zero high/critical issues
-10. Unit tests verify all RFC Section 5.2 attack scenarios and mitigations
+7. Hardhat security analysis passes with zero high/critical issues
+8. Slither static analysis passes with zero high/critical issues
+9. Unit tests verify reentrancy protection with malicious contracts
+10. Unit tests verify access control with unauthorized callers
 
 **Priority:** Critical
 **Estimate:** 6 hours
-**Dependencies:** Story 2.2, Epic 1 Story 1.18 (RFC Security Considerations)
+**Dependencies:** Story 2.2
 
 ---
 
@@ -115,10 +107,7 @@ Develop, test, and deploy the smart contract suite for bidirectional payment cha
 5. Contract verified on Basescan block explorer
 6. Deployment documentation includes contract address and verification link
 7. Gas costs logged and within acceptable range
-8. Smoke test using Epic 1 reference implementation:
-   - Create channel with BIMPClient/BIMPServer
-   - Sign payment state with Epic 1 crypto.signPaymentState()
-   - Settle on-chain and verify balances
+8. Smoke test: create channel, deposit funds, settle, close channel on testnet
 9. README updated with testnet deployment instructions
 10. Deployment completes successfully without errors
 
@@ -142,7 +131,7 @@ Develop, test, and deploy the smart contract suite for bidirectional payment cha
 5. Contract verified on Optimistic Etherscan block explorer
 6. Deployment documentation includes contract address and verification link
 7. Gas costs logged and compared to Base Sepolia deployment
-8. Smoke test using Epic 1 reference implementation (same flow as Story 2.4)
+8. Smoke test: create channel, deposit funds, settle, close channel on testnet
 9. README updated with Optimism testnet deployment instructions
 10. Deployment completes successfully without errors
 
@@ -166,12 +155,8 @@ Develop, test, and deploy the smart contract suite for bidirectional payment cha
 5. Events used instead of storage where appropriate
 6. Gas costs <$0.01 per operation on Base L2 (at current gas prices)
 7. Gas optimization document created with before/after metrics
-8. Benchmarking script measures gas costs across different scenarios:
-   - New channel creation
-   - First settlement
-   - Subsequent settlements
-   - Channel closure
-9. Gas costs compared to NFR requirements from PRD
+8. Benchmarking script measures gas costs across different scenarios
+9. Gas costs compared to target (NFR requirements)
 10. All optimizations maintain >95% test coverage
 
 **Priority:** Medium
@@ -183,21 +168,14 @@ Develop, test, and deploy the smart contract suite for bidirectional payment cha
 ## Epic Summary
 
 **Total Stories:** 6
-**Total Estimated Time:** 33 hours (~1 week with 1 developer, 2-3 weeks with testing and deployment validation)
+**Total Estimated Time:** 33 hours (~1 week with 1 developer, 2-3 weeks with parallel workstreams)
 **Critical Path:** 2.1 → 2.2 → 2.3 → 2.4 → 2.5 → 2.6
 
 **Success Criteria:**
 - ✅ Smart contracts deployed to Base Sepolia and Optimism Sepolia
-- ✅ EIP-712 signature verification matches RFC Section 5.1 specification
-- ✅ Contracts pass all RFC test vectors from Epic 1
 - ✅ Contracts verified on block explorers
 - ✅ >95% test coverage
-- ✅ Zero high/critical security issues (Slither + manual audit)
-- ✅ Gas costs <$0.01 per operation on L2
-- ✅ Integration tests with Epic 1 reference implementation pass
+- ✅ Zero high/critical security issues
+- ✅ Gas costs <$0.01 per operation
 
 **Next Epic:** Epic 3 - Multi-Language SDK Development
-
----
-
-**RFC Dependency Note:** This epic directly implements the on-chain settlement logic specified in RFC Section 4.3 (Settlement Flow) and RFC Section 5 (Security Considerations). All smart contract behavior must match the RFC specification to ensure interoperability with SDKs built in Epic 3.
